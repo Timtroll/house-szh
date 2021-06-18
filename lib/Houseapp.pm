@@ -54,12 +54,24 @@ warn "+++++++++++";
     $r->post('/auth/login')               ->to('auth#login');
     $r->any('/auth/logout')               ->to('auth#logout');
 
-    $r->get('/')             ->to('index#index');       #
+    $r->get('/')                 ->to('index#index');       #
+    $r->get('/list')             ->to('user#list');       #
 
-    $auth->post('/add')          ->to('index#add');
-    $auth->post('/edit')         ->to('index#edit');
-    $auth->post('/save')         ->to('index#save');
-    $auth->post('/toggle')       ->to('index#toggle');
+    $auth->post('/user/add')          ->to('user#add');
+    $auth->post('/user/edit')         ->to('user#edit');
+    $auth->post('/user/save')         ->to('user#save');
+    $auth->post('/user/toggle')       ->to('user#toggle');
+
+    $auth->post('/data/add')          ->to('data#add');
+    $auth->post('/data/edit')         ->to('data#edit');
+    $auth->post('/data/save')         ->to('data#save');
+    $auth->post('/data/toggle')       ->to('data#toggle');
+
+    $auth->post('/document/add')          ->to('document#add');
+    $auth->post('/document/edit')         ->to('document#edit');
+    $auth->post('/document/save')         ->to('document#save');
+    $auth->post('/document/toggle')       ->to('document#toggle');
+
 
     # роут на который происходит редирект, для вывода ошибок
     $r->any('/*')->to('index#error');

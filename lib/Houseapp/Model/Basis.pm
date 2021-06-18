@@ -271,108 +271,108 @@ sub _update_event {
 
 
 
-sub _exist_item {
-    my ( $self, $cache_type, $item ) = @_;
+# sub _exist_item {
+#     my ( $self, $cache_type, $item ) = @_;
 
-    return 0 unless $cache_type;
+#     return 0 unless $cache_type;
 
-    return exists( $$cache_type{ $item } ) ? 1: 0;
-}
+#     return exists( $$cache_type{ $item } ) ? 1: 0;
+# }
 
-sub _update_element {
-    my ( $self, $data ) = @_;
+# sub _update_element {
+#     my ( $self, $data ) = @_;
 
-    my $old_name = $$cache_id{ $$data{'id'} }{'name'};
+#     my $old_name = $$cache_id{ $$data{'id'} }{'name'};
 
-    if ( $old_name ne $$data{'name'} ) {
+#     if ( $old_name ne $$data{'name'} ) {
 
-        delete $$cache_name{ $old_name };
+#         delete $$cache_name{ $old_name };
 
-        # добавляем новый ключ в хэш (так как имя меняется)
-        $$cache_name{ $$data{'name'} } = {
-            "id"       => $$data{'id'},
-            "parent"   => $$cache_id{ $$data{'id'} }{'parent'},
-            "children" => $$cache_id{ $$data{'id'} }{'children'},
-            "name"     => $$data{'name'},
-            "status"   => $$data{'status'}
-        };
-    }
-    else {
-        # меняем статус (не меняем имя, так как оно совпадает)
-        $$cache_name{ $$cache_id{ $$data{'id'} }{'name'} }{'status'} = $$data{'status'};
-    }
+#         # добавляем новый ключ в хэш (так как имя меняется)
+#         $$cache_name{ $$data{'name'} } = {
+#             "id"       => $$data{'id'},
+#             "parent"   => $$cache_id{ $$data{'id'} }{'parent'},
+#             "children" => $$cache_id{ $$data{'id'} }{'children'},
+#             "name"     => $$data{'name'},
+#             "status"   => $$data{'status'}
+#         };
+#     }
+#     else {
+#         # меняем статус (не меняем имя, так как оно совпадает)
+#         $$cache_name{ $$cache_id{ $$data{'id'} }{'name'} }{'status'} = $$data{'status'};
+#     }
 
-    # добавление изменений в cache_id
-    $$cache_id{ $$data{'id'} }{'name'}   = $$data{'name'};
-    $$cache_id{ $$data{'id'} }{'status'} = $$data{'status'};
+#     # добавление изменений в cache_id
+#     $$cache_id{ $$data{'id'} }{'name'}   = $$data{'name'};
+#     $$cache_id{ $$data{'id'} }{'status'} = $$data{'status'};
 
-    # добавление изменений в cache
-    foreach ( @$base ) {
-        if ( $$_{'id'} == $$data{'id'} ) {
-            $$_{'name'} = $$data{'name'};
-            $$_{'status'} = $$data{'status'};
-            last;
-        }
-    }
+#     # добавление изменений в cache
+#     foreach ( @$base ) {
+#         if ( $$_{'id'} == $$data{'id'} ) {
+#             $$_{'name'} = $$data{'name'};
+#             $$_{'status'} = $$data{'status'};
+#             last;
+#         }
+#     }
 
-    return;
-}
+#     return;
+# }
 
-sub _insert_element {
-    my ( $self, $data ) = @_;
+# sub _insert_element {
+#     my ( $self, $data ) = @_;
 
-    # увеличиваем последний id кэша
-    $max_cache_id++;
+#     # увеличиваем последний id кэша
+#     $max_cache_id++;
 
-    $$cache_id{ $max_cache_id } = $$cache_name{ $$data{'name'} } = {
-        "id" => $max_cache_id,
-        "parent" => $$data{'parent'} ? $$data{'parent'} : 0,
-        "children" => [],
-        "name" => $$data{'name'},
-        "status" => $$data{'status'}
-    };
+#     $$cache_id{ $max_cache_id } = $$cache_name{ $$data{'name'} } = {
+#         "id" => $max_cache_id,
+#         "parent" => $$data{'parent'} ? $$data{'parent'} : 0,
+#         "children" => [],
+#         "name" => $$data{'name'},
+#         "status" => $$data{'status'}
+#     };
 
-    push @$cache, {
-        "id" => $max_cache_id,
-        "parent" => $$data{'parent'} ? $$data{'parent'} : 0,
-        "children" => [],
-        "name" => $$data{'name'},
-        "status" => $$data{'status'}
-    };
+#     push @$cache, {
+#         "id" => $max_cache_id,
+#         "parent" => $$data{'parent'} ? $$data{'parent'} : 0,
+#         "children" => [],
+#         "name" => $$data{'name'},
+#         "status" => $$data{'status'}
+#     };
 
-    return;
-}
+#     return;
+# }
 
-sub _recursive_delete {
-    my ( $self, $id ) = @_;
+# sub _recursive_delete {
+#     my ( $self, $id ) = @_;
 
-    foreach my $item ( @$base ) {
-        if ( $$item{'id'} == $id ) {
-            $$item{'status'} = $$cache_id{ $id }{'status'} = $$cache_name{ $$cache_id{ $id }{'name'} }{'status'} = 0;
-            foreach my $child ( @{$$item{'children'}} ) {
-                $self->_recursive_delete( $child );
-            }
-        }
-    }
+#     foreach my $item ( @$base ) {
+#         if ( $$item{'id'} == $id ) {
+#             $$item{'status'} = $$cache_id{ $id }{'status'} = $$cache_name{ $$cache_id{ $id }{'name'} }{'status'} = 0;
+#             foreach my $child ( @{$$item{'children'}} ) {
+#                 $self->_recursive_delete( $child );
+#             }
+#         }
+#     }
 
-    return;
-}
+#     return;
+# }
 
-sub _recursive_get {
-    my ( $self, $id ) = @_;
+# sub _recursive_get {
+#     my ( $self, $id ) = @_;
 
-    foreach my $item ( @$base ) {
-        if ( $$item{'id'} == $id ) {
-            $$cache_id{ $id } = $$cache_name{ $$item{'name'} } = $item;
-            push @{$cache}, $item;
-            foreach my $child ( @{$$item{'children'}} ) {
-                $self->_recursive_get( $child );
-            }
-        }
-    }
+#     foreach my $item ( @$base ) {
+#         if ( $$item{'id'} == $id ) {
+#             $$cache_id{ $id } = $$cache_name{ $$item{'name'} } = $item;
+#             push @{$cache}, $item;
+#             foreach my $child ( @{$$item{'children'}} ) {
+#                 $self->_recursive_get( $child );
+#             }
+#         }
+#     }
 
 
-    return;
-}
+#     return;
+# }
 
 1;
