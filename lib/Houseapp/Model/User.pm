@@ -36,4 +36,22 @@ sub _insert_user {
     return $id;
 }
 
+sub _all_groups {
+    my $self = shift;
+
+    my ( $sql, $sth, $groups, $list );
+
+    # получаем список групп
+    $sql = 'SELECT id,label FROM "public"."groups"';
+
+    $sth = $self->{app}->pg_dbh->prepare( $sql );
+    $sth->execute();
+
+    $groups = $sth->fetchall_hashref( 'id' );
+    $sth->finish();
+    push @!, "couldn't get list of groups" unless $groups;
+
+    return $groups;
+}
+
 1;
