@@ -42,7 +42,7 @@ sub _insert_data {
     return $id;
 }
 
-sub _all_groups {
+sub _get_list {
     my $self = shift;
 
     my ( $sql, $sth, $groups, $list );

@@ -53,4 +53,72 @@ sub index {
     $self->render( 'json' => $resp );
 }
 
+sub activate {
+    my $self = shift;
+
+    my ( $toggle, $resp, $data );
+
+    # проверка данных
+    $data = $self->_check_fields();
+
+    # проверка существования элемента для изменения
+    unless ( @! ) {
+        $$data{'table'} = 'user';
+
+        $$data{'fieldname'} = 'publish';
+
+        $$data{'value'} = "'t'";
+
+        unless ( $self->model('Utils')->_exists_in_table( 'user', 'id', $$data{'id'} ) ) {
+            push @!, "user with '$$data{'id'}' doesn't exist";
+        }
+        unless ( @! ) {
+            $toggle = $self->model('Utils')->_toggle( $data );
+            push @!, "Could not toggle User '$$data{'id'}'" unless $toggle;
+        }
+    }
+
+    $resp->{'message'} = join("\n", @!) if @!;
+    $resp->{'status'} = @! ? 'fail' : 'ok';
+    $resp->{'id'} = $$data{'id'} unless @!;
+
+    @! = ();
+
+    $self->render( 'json' => $resp );
+}
+
+sub deactivate {
+    my $self = shift;
+
+    my ( $toggle, $resp, $data );
+
+    # проверка данных
+    $data = $self->_check_fields();
+
+    # проверка существования элемента для изменения
+    unless ( @! ) {
+        $$data{'table'} = 'user';
+
+        $$data{'fieldname'} = 'publish';
+
+        $$data{'value'} = "'t'";
+
+        unless ( $self->model('Utils')->_exists_in_table( 'user', 'id', $$data{'id'} ) ) {
+            push @!, "user with '$$data{'id'}' doesn't exist";
+        }
+        unless ( @! ) {
+            $toggle = $self->model('Utils')->_toggle( $data );
+            push @!, "Could not toggle User '$$data{'id'}'" unless $toggle;
+        }
+    }
+
+    $resp->{'message'} = join("\n", @!) if @!;
+    $resp->{'status'} = @! ? 'fail' : 'ok';
+    $resp->{'id'} = $$data{'id'} unless @!;
+
+    @! = ();
+
+    $self->render( 'json' => $resp );
+}
+
 1;
