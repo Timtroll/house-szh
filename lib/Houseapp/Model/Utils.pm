@@ -40,39 +40,41 @@ sub _exists_in_table {
     return $row->{'id'} ? 1 : 0;
 }
 
-sub _is_teacher {
-    my( $self, $id ) = @_;
-
-    my ( $sth, $sql, $result );
-
-    return unless $id;
-
-    # взять пользователей teacher, rector
-    $sql = q(SELECT u.user_id
-        FROM "user_groups" AS u  
-        INNER JOIN "groups" AS g ON u."group_id" = g."id"
-        WHERE g."name" = 'teacher' or g."name" = 'rector'
-    );
-    $sth = $self->{app}->pg_dbh->prepare( $sql );
-    $sth->execute();
-    $result = $sth->fetchall_hashref( 'user_id' );
-    $sth->finish();
-    return exists( $$result{$id} ) ? 1 : 0;
-}
-
-# включение/отключение (1/0) определенного поля в указанной таблице по id
-# my $true = $self->model('Utils')->_toggle_route( <table>, <id>, <field>, <val> );
-# <id>    - id записи 
-# <field> - имя поля в таблице
-# <val>   - 1/0
-# возвращается true/false
-sub _toggle {
+sub _activate {
     my ($self, $data) = @_;
 
-    return unless ( $data || $$data{'table'} || $$data{'id'} || $$data{'fieldname'} || $$data{'value'} );
+    return unless ( $data || $$data{'table'} || $$data{'id'} );
 
     my $result;
-    my $sql ='UPDATE "public"."'.$$data{'table'}.'" SET "'.$$data{'fieldname'}.'"='.$$data{'value'}.' WHERE "id"='.$$data{'id'};
+    my $sql ='UPDATE "public"."'.$$data{'table'}.'" SET "status"=1 WHERE "id"='.$$data{'id'};
+
+    $result = $self->{app}->pg_dbh->do($sql);
+    $result = $result ? $result : 0;
+
+    return $result;
+}
+
+sub _deactivate {
+    my ($self, $data) = @_;
+
+    return unless ( $data || $$data{'table'} || $$data{'id'} );
+
+    my $result;
+    my $sql ='UPDATE "public"."'.$$data{'table'}.'" SET "status"=0 WHERE "id"='.$$data{'id'};
+
+    $result = $self->{app}->pg_dbh->do($sql);
+    $result = $result ? $result : 0;
+
+    return $result;
+}
+
+sub _delete {
+    my ($self, $data) = @_;
+
+    return unless ( $data || $$data{'table'} || $$data{'id'} );
+
+    my $result;
+    my $sql ='UPDATE "public"."'.$$data{'table'}.'" SET "status"=2 WHERE "id"='.$$data{'id'};
 
     $result = $self->{app}->pg_dbh->do($sql);
     $result = $result ? $result : 0;
@@ -97,43 +99,5 @@ sub _folder_check {
 
     return $result->{'folder'} ? 1 : 0;
 }
-
-# получить текущее время
-sub _get_time {
-    my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime( time );
-
-    my $nice_timestamp = sprintf ( "%04d%02d%02d %02d:%02d:%02d", $year+1900, $mon+1, $mday, $hour, $min,$sec );
-    return $nice_timestamp;
-}
-
-# перевод секунд в дату
-sub _sec2date {
-    my ( $self, $time ) = @_;
-
-    unless ( $time ) {
-        push @!, 'no time';
-        return;
-    }
-
-    my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) = localtime( $time );
-
-    my $nice_timestamp = sprintf ( "%04d%02d%02d %02d:%02d:%02d", $year+1900, $mon+1, $mday, $hour, $min,$sec );
-    return $nice_timestamp;
-}
-
-# перевод даты в секунды
-sub _date2sec {
-    my ( $self, $time ) = @_;
-
-    unless ( $time ) {
-        push @!, 'no time';
-        return;
-    }
-
-    # перевод времени в секунды
-    $time =~ /^(\d+)-(\d+)-(\d+)\ (\d+)\:(\d+)\:(\d+)$/;
-    $time = timelocal( $6, $5, $4, $3, $2-1, $1 );
-}
-
 
 1;

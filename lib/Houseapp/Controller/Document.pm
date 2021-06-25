@@ -121,4 +121,31 @@ sub deactivate {
     $self->render( 'json' => $resp );
 }
 
+sub edit {
+    my $self = shift;
+
+    my ( $result, $data, $resp );
+
+    # проверка данных
+    $data = $self->_check_fields();
+
+    unless ( @! ) {
+        unless ( $self->model('Utils')->_exists_in_table('document', 'id', $$data{'id'} ) ) {
+            push @!, "Could not get Document '$$data{'id'}'";
+        }
+    }
+
+    unless ( @! ) {
+        $result = $self->model('Document')->_get_data( $data );
+    }
+
+    $resp->{'message'} = join("\n", @!) if @!;
+    $resp->{'status'} = @! ? 'fail' : 'ok';
+    $resp->{'data'} = $result unless @!;
+
+    @! = ();
+
+    $self->render( 'json' => $resp );
+}
+
 1;

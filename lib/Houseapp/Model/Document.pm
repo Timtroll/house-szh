@@ -58,4 +58,21 @@ sub _get_list {
     return $groups;
 }
 
+sub _get_document {
+    my ( $self, $id ) = @_;
+
+    return unless $id;
+
+    my ( $result, $row, $sql, $sth );
+
+    $sql = 'SELECT * FROM "public"."settings" WHERE "id" = :id';
+    $sth = $self->{app}->pg_dbh->prepare( $sql );
+    $sth->bind_param( ':id', $id );
+    $sth->execute();
+    $row = $sth->fetchrow_hashref();
+    $sth->finish();
+    
+    return $row;
+}
+
 1;

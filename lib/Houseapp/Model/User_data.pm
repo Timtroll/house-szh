@@ -1,4 +1,4 @@
-package Freee::Model::Data;
+package Freee::Model::User_data;
 
 use Mojo::Base 'Houseapp::Model::Base';
 
@@ -20,7 +20,7 @@ sub _insert_data {
     }
 
     unless ( @! ) {
-        $sql = 'INSERT INTO "public"."groups" ( "login", "email", "phone", "password" ) VALUES ( :login, :email, :phone, :password )';
+        $sql = 'INSERT INTO "public"."user_data" ( "login", "email", "phone", "password" ) VALUES ( :login, :email, :phone, :password )';
         $sth = $self->{'app'}->pg_dbh->prepare( $sql );
         $sth->bind_param( ':login', $$data{'login'} );
         $sth->bind_param( ':email', $$data{'email'} );
@@ -48,7 +48,7 @@ sub _get_list {
     my ( $sql, $sth, $groups, $list );
 
     # получаем список групп
-    $sql = 'SELECT id,label FROM "public"."groups"';
+    $sql = 'SELECT id,label FROM "public"."user_data"';
 
     $sth = $self->{app}->pg_dbh->prepare( $sql );
     $sth->execute();
@@ -60,5 +60,44 @@ sub _get_list {
     return $groups;
 }
 
+sub _get_data {
+    my ( $self, $id ) = @_;
+
+    return unless $id;
+
+    my ( $result, $row, $sql, $sth );
+
+    $sql = 'SELECT * FROM "public"."user_data" WHERE "id" = :id';
+    $sth = $self->{app}->pg_dbh->prepare( $sql );
+    $sth->bind_param( ':id', $id );
+    $sth->execute();
+    $row = $sth->fetchrow_hashref();
+    $sth->finish();
+    
+    return $row;
+}
+
+sub _update_data {
+    my ( $self, $data ) = @_;
+
+    my ( $id, $sql, $sth, $result );
+
+    # проверка входных данных
+    unless ( ( ref($data) eq 'HASH' ) && scalar( keys %$data ) ) {
+        push @!, "no data for update";
+    }
+
+    unless ( @! ) {
+        $sql = 'UPDATE "public"."user_data" SET '.join( ', ', map { "\"$_\"=".$self->{'app'}->pg_dbh->quote( $$data{$_} ) } keys %$data ) . " WHERE \"id\"=" . $$data{'id'} . "returning id";
+        $sth = $self->{'app'}->pg_dbh->prepare( $sql );
+        $sth->execute();
+        $result = $sth->fetchrow_array();
+        $sth->finish();
+
+        push @!, "Error by update $$data{'label'}" if ! defined $result;
+    }
+
+    return $result;
+}
 
 1;

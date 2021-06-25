@@ -7,8 +7,12 @@ CREATE SEQUENCE "public".documents_id_seq;
 
 CREATE TABLE "public"."documents" (
     "id" int4 DEFAULT nextval('documents_id_seq'::regclass) NOT NULL,
-    "name" varchar(255) COLLATE "default" NOT NULL,
-    "status" int2 DEFAULT 1 NOT NULL,
+    "new_name" varchar(255) COLLATE "default" NOT NULL,
+    "old_name" varchar(255) COLLATE "default" NOT NULL,
+    "extension" varchar(5) COLLATE "default" NOT NULL,
+    "size" int4,
+    "time_create" timestamptz(6) DEFAULT CURRENT_TIMESTAMP,
+    "description" varchar(4096) COLLATE "default",
     CONSTRAINT "documents_pkey" PRIMARY KEY ("id")
 )
 WITH (OIDS=FALSE);

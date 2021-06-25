@@ -1,4 +1,4 @@
-package Houseapp::Controller::User;
+package Houseapp::Controller::User_data;
 
 use utf8;
 
@@ -15,7 +15,7 @@ sub add {
     $data = $self->_check_fields();
 
     unless ( @! ) {
-        $id = $self->model('User')->_insert_user( $data );
+        $id = $self->model('User_data')->_insert_data( $data );
     }
 
     $resp->{'message'} = join("\n", @!) if @!;
@@ -41,7 +41,7 @@ sub index {
         $$data{'offset'} = ( $$data{'page'} - 1 ) * $$data{'limit'};
 
         # получаем список пользователей группы
-        $users = $self->model('User')->_get_list( $data );
+        $users = $self->model('User_data')->_get_list( $data );
     }
 
     $resp->{'message'} = join("\n", @!) if @!;
@@ -63,9 +63,9 @@ sub activate {
 
     # проверка существования элемента для изменения
     unless ( @! ) {
-        $$data{'table'} = 'user';
+        $$data{'table'} = 'user_data';
 
-        unless ( $self->model('Utils')->_exists_in_table( 'user', 'id', $$data{'id'} ) ) {
+        unless ( $self->model('Utils')->_exists_in_table( 'user_data', 'id', $$data{'id'} ) ) {
             push @!, "user with '$$data{'id'}' doesn't exist";
         }
         unless ( @! ) {
@@ -93,9 +93,9 @@ sub deactivate {
 
     # проверка существования элемента для изменения
     unless ( @! ) {
-        $$data{'table'} = 'user';
+        $$data{'table'} = 'user_data';
 
-        unless ( $self->model('Utils')->_exists_in_table( 'user', 'id', $$data{'id'} ) ) {
+        unless ( $self->model('Utils')->_exists_in_table( 'user_data', 'id', $$data{'id'} ) ) {
             push @!, "user with '$$data{'id'}' doesn't exist";
         }
         unless ( @! ) {
@@ -123,9 +123,9 @@ sub delete {
 
     # проверка существования элемента для изменения
     unless ( @! ) {
-        $$data{'table'} = 'user';
+        $$data{'table'} = 'user_data';
 
-        unless ( $self->model('Utils')->_exists_in_table( 'user', 'id', $$data{'id'} ) ) {
+        unless ( $self->model('Utils')->_exists_in_table( 'user_data', 'id', $$data{'id'} ) ) {
             push @!, "user with '$$data{'id'}' doesn't exist";
         }
         unless ( @! ) {
@@ -152,13 +152,13 @@ sub edit {
     $data = $self->_check_fields();
 
     unless ( @! ) {
-        unless ( $self->model('Utils')->_exists_in_table('user', 'id', $$data{'id'} ) ) {
-            push @!, "Could not get User '$$data{'id'}'";
+        unless ( $self->model('Utils')->_exists_in_table('user_data', 'id', $$data{'id'} ) ) {
+            push @!, "Could not get Data '$$data{'id'}'";
         }
     }
 
     unless ( @! ) {
-        $result = $self->model('Data')->_get_data( $data );
+        $result = $self->model('User_data')->_get_data( $data );
     }
 
     $resp->{'message'} = join("\n", @!) if @!;
@@ -181,13 +181,13 @@ sub save {
 
     # проверка существования обновляемой строки
     unless ( @! ) {
-        unless ( $self->model('Utils')->_exists_in_table('groups', 'id', $$data{'id'}) ) {
-            push @!, "Group with id '$$data{'id'}' does not exist";
+        unless ( $self->model('Utils')->_exists_in_table('user_data', 'id', $$data{'id'}) ) {
+            push @!, "Data with id '$$data{'id'}' does not exist";
         }
     }
 
     unless ( @! ) {
-        $id = $self->model('Groups')->_update_group( $data );
+        $id = $self->model('User_data')->_update_data( $data );
     }
 
     $resp->{'message'} = join("\n", @!) if @!;

@@ -42,7 +42,7 @@ sub _get_list {
     my ( $sql, $sth, $groups, $list );
 
     # получаем список групп
-    $sql = 'SELECT id,label FROM "public"."groups"';
+    $sql = 'SELECT id,label FROM "public"."users"';
 
     $sth = $self->{app}->pg_dbh->prepare( $sql );
     $sth->execute();
@@ -52,6 +52,46 @@ sub _get_list {
     push @!, "couldn't get list of groups" unless $groups;
 
     return $groups;
+}
+
+sub _get_user {
+    my ( $self, $id ) = @_;
+
+    return unless $id;
+
+    my ( $result, $row, $sql, $sth );
+
+    $sql = 'SELECT * FROM "public"."users" WHERE "id" = :id';
+    $sth = $self->{app}->pg_dbh->prepare( $sql );
+    $sth->bind_param( ':id', $id );
+    $sth->execute();
+    $row = $sth->fetchrow_hashref();
+    $sth->finish();
+    
+    return $row;
+}
+
+sub _update_group {
+    my ( $self, $data ) = @_;
+
+    my ( $id, $sql, $sth, $result );
+
+    # проверка входных данных
+    unless ( ( ref($data) eq 'HASH' ) && scalar( keys %$data ) ) {
+        push @!, "no data for update";
+    }
+
+    unless ( @! ) {
+        $sql = 'UPDATE "public"."users" SET '.join( ', ', map { "\"$_\"=".$self->{'app'}->pg_dbh->quote( $$data{$_} ) } keys %$data ) . " WHERE \"id\"=" . $$data{'id'} . "returning id";
+        $sth = $self->{'app'}->pg_dbh->prepare( $sql );
+        $sth->execute();
+        $result = $sth->fetchrow_array();
+        $sth->finish();
+
+        push @!, "Error by update $$data{'label'}" if ! defined $result;
+    }
+
+    return $result;
 }
 
 1;
