@@ -10,11 +10,11 @@ use FindBin;
 use Mojo::JSON qw( decode_json );
 use Data::Compare;
 use Data::Dumper;
-use lib "$FindBin::Bin/../../lib";
+use lib "$FindBin::Bin/../lib";
 use common;
 
 BEGIN {
-    unshift @INC, "$FindBin::Bin/../../lib";
+    unshift @INC, "$FindBin::Bin/../lib";
 }
 my ( $t, $host, $picture_path, $test_data, $extension, $regular, $file_path, $desc_path, $cmd, $data, $result, $response, $token, $url, $size, $description );
 $t = Test::Mojo->new('Freee');
@@ -76,7 +76,7 @@ $test_data = {
                     'description' => 'description'
                    },
         'result' => {
-                    'message'   => "/upload _check_fields: didn\'t has required file data in \'upload\'",
+                    'message'   => "/user_doc _check_fields: didn\'t has required file data in \'upload\'",
                     'status'    => 'fail'
         },
         'comment' => 'empty file:' 
@@ -87,7 +87,7 @@ $test_data = {
                         upload => { file => $picture_path . 'large_file.jpg' }
                     },
         'result' => {
-                        'message'   => '/upload _check_fields: file is too large',
+                        'message'   => '/user_doc _check_fields: file is too large',
                         'status'    => 'fail'
         },
         'comment' => 'file is too large:' 
@@ -98,7 +98,7 @@ $test_data = {
                         upload => { file => $picture_path . 'no_extension' }
                     },
         'result' => {
-                        'message'   => "/upload _check_fields: can\'t read extension",
+                        'message'   => "/user_doc _check_fields: can\'t read extension",
                         'status'    => 'fail'
         },
         'comment' => 'no extension:' 
@@ -109,7 +109,7 @@ $test_data = {
                         upload => { file => $picture_path . 'wrong_extension.wrong_extension' }
                     },
         'result' => {
-                        'message'   => '/upload _check_fields: extension wrong_extension is not valid',
+                        'message'   => '/user_doc _check_fields: extension wrong_extension is not valid',
                         'status'    => 'fail'
         },
         'comment' => 'wrong extension:' 
@@ -123,7 +123,7 @@ foreach my $test (sort {$a <=> $b} keys %{$test_data}) {
     $result = $$test_data{$test}{'result'};
 
     # проверка подключения
-    $t->post_ok( $host.'/upload/' => {token => $token} => form => $data );
+    $t->post_ok( $host.'/user_doc/' => {token => $token} => form => $data );
     unless ( $t->status_is(200)->{tx}->{res}->{code} == 200  ) {
         diag("Can't connect \n");
         last;
@@ -183,8 +183,8 @@ done_testing();
 # очистка тестовой таблицы
 sub clear_db {
     if ($t->app->config->{test}) {
-        $t->app->pg_dbh->do('ALTER SEQUENCE "public".media_id_seq RESTART');
-        $t->app->pg_dbh->do('TRUNCATE TABLE "public".media RESTART IDENTITY CASCADE');
+        $t->app->pg_dbh->do('ALTER SEQUENCE "public".documents_id_seq RESTART');
+        $t->app->pg_dbh->do('TRUNCATE TABLE "public".documents RESTART IDENTITY CASCADE');
     }
     else {
         warn("Turn on 'test' option in config")

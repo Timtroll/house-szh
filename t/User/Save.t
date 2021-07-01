@@ -1,29 +1,20 @@
-# обновление группы
-# my $id = $self->update({
-#     "id"        => 1            - id обновляемого элемента ( >0 )
-#     "label"     => 'название'   - обязательно (название для отображения)
-#     "name",     => 'name'       - обязательно (системное название, латиница)
-#     "status"    => 0 или 1      - активна ли группа
-# });
 use Mojo::Base -strict;
+
+use FindBin;
+BEGIN {
+    unshift @INC, "$FindBin::Bin/../lib";
+}
 
 use Test::More;
 use Test::Mojo;
-use FindBin;
-use Mojo::JSON qw( decode_json );
+use Data::Dumper;
 
-BEGIN {
-    unshift @INC, "$FindBin::Bin/../../lib";
-}
-
-my $t = Test::Mojo->new('Freee');
-
-# Включаем режим работы с тестовой базой и чистим таблицу
-$t->app->config->{test} = 1 unless $t->app->config->{test};
-clear_db();
+my $t = Test::Mojo->new('Houseapp');
 
 # Устанавливаем адрес
 my $host = $t->app->config->{'host'};
+
+clear_db();
 
 # получение токена для аутентификации
 $t->post_ok( $host.'/auth/login' => form => { 'login' => 'admin', 'password' => 'admin' } );
@@ -42,7 +33,7 @@ my $test_data = {
     1 => {
         'data' => {
             'name'      => 'name1',
-            'label'     => 'label1',
+            'surname'     => 'surname1',
             'status'    => 1
         },
         'result' => {
@@ -53,7 +44,7 @@ my $test_data = {
     2 => {
         'data' => {
             'name'      => 'name2',
-            'label'     => 'label2',
+            'surname'     => 'surname2',
             'status'    => 1
         },
         'result' => {
@@ -64,7 +55,7 @@ my $test_data = {
 };
 diag "Add groups:";
 foreach my $test (sort {$a <=> $b} keys %{$test_data}) {
-    $t->post_ok( $host.'/groups/add' => {token => $token} => form => $$test_data{$test}{'data'} );
+    $t->post_ok( $host.'/user/add' => {token => $token} => form => $$test_data{$test}{'data'} );
     unless ( $t->status_is(200)->{tx}->{res}->{code} == 200  ) {
         diag("Can't connect");
         exit; 
@@ -79,7 +70,7 @@ $test_data = {
         'data' => {
             'id'        => 1,
             'name'      => 'name',
-            'label'     => 'label',
+            'surname'     => 'surname',
             'status'    => 1
         },
         'result' => {
@@ -94,11 +85,11 @@ $test_data = {
         'data' => {
             'id'        => 404,
             'name'      => 'name3',
-            'label'     => 'label3',
+            'surname'     => 'surname3',
             'status'    => 1
         },
         'result' => {
-            'message'   => "Group with id '404' does not exist",
+            'message'   => "User with id '404' does not exist",
             'status'    => 'fail'
         },
         'comment' => 'Wrong id:' 
@@ -106,11 +97,11 @@ $test_data = {
     3 => {
         'data' => {
             'name'      => 'name',
-            'label'     => 'label',
+            'surname'     => 'surname',
             'status'    => 1
         },
         'result' => {
-            'message'   => "/groups/save _check_fields: didn't has required data in 'id' = ''",
+            'message'   => "/user/save _check_fields: didn't has required data in 'id' = ''",
             'status'    => 'fail'
         },
         'comment' => 'No id:' 
@@ -118,11 +109,11 @@ $test_data = {
     4 => {
         'data' => {
             'id'        => 1,
-            'label'     => 'label',
+            'surname'     => 'surname',
             'status'    => 1
         },
         'result' => {
-            'message'   => "/groups/save _check_fields: didn't has required data in 'name' = ''",
+            'message'   => "/user/save _check_fields: didn't has required data in 'name' = ''",
             'status'    => 'fail'
         },
         'comment' => 'No name:' 
@@ -134,19 +125,19 @@ $test_data = {
             'status'    => 1
         },
         'result' => {
-            'message'   => "/groups/save _check_fields: didn't has required data in 'label' = ''",
+            'message'   => "/user/save _check_fields: didn't has required data in 'surname' = ''",
             'status'    => 'fail'
         },
-        'comment' => 'No label:' 
+        'comment' => 'No surname:' 
     },
     6 => {
         'data' => {
             'id'        => 1,
             'name'      => 'name',
-            'label'     => 'label'
+            'surname'     => 'surname'
         },
         'result' => {
-            'message'   => "/groups/save _check_fields: didn't has required data in 'status' = ''",
+            'message'   => "/user/save _check_fields: didn't has required data in 'status' = ''",
             'status'    => 'fail'
         },
         'comment' => 'No value:' 
@@ -155,11 +146,11 @@ $test_data = {
         'data' => {
             'id'        => 1,
             'name'      => 'name*',
-            'label'     => 'label',
+            'surname'     => 'surname',
             'status'    => 1
         },
         'result' => {
-            'message'   => "/groups/save _check_fields: empty field 'name', didn't match regular expression",
+            'message'   => "/user/save _check_fields: empty field 'name', didn't match regular expression",
             'status'    => 'fail'
         },
         'comment' => 'Wrong field type:' 
@@ -167,25 +158,25 @@ $test_data = {
     8 => {
         'data' => {
             'id'        => 1,
-            'label'     => 'label2',
+            'surname'     => 'surname2',
             'name'      => 'name8',            
             'status'    => 0
         },
         'result' => {
-            'message'   => "Group with label 'label2' already exists",
+            'message'   => "User with surname 'surname2' already exists",
             'status'    => 'fail'
         },
-        'comment' => 'Label already used:' 
+        'comment' => 'surname already used:' 
     },
     9 => {
         'data' => {
             'id'        => 1,
-            'label'     => 'label9',
+            'surname'     => 'surname9',
             'name'      => 'name2',            
             'status'    => 0
         },
         'result' => {
-            'message'   => "Group with name 'name2' already exists",
+            'message'   => "User with name 'name2' already exists",
             'status'    => 'fail'
         },
         'comment' => 'Name already used:' 
@@ -196,7 +187,7 @@ foreach my $test (sort {$a <=> $b} keys %{$test_data}) {
     my $data = $$test_data{$test}{'data'};
     my $result = $$test_data{$test}{'result'};
     diag ( $$test_data{$test}{'comment'} );
-    $t->post_ok($host.'/groups/save' => {token => $token} => form => $data )
+    $t->post_ok($host.'/user/save' => {token => $token} => form => $data )
         ->status_is(200)
         ->content_type_is('application/json;charset=UTF-8')
         ->json_is( $result );
@@ -208,8 +199,8 @@ done_testing();
 # очистка тестовой таблицы
 sub clear_db {
     if ($t->app->config->{test}) {
-        $t->app->pg_dbh->do('ALTER SEQUENCE "public".groups_id_seq RESTART');
-        $t->app->pg_dbh->do('TRUNCATE TABLE "public".groups RESTART IDENTITY CASCADE');
+        $t->app->pg_dbh->do('ALTER SEQUENCE "public".users_id_seq RESTART');
+        $t->app->pg_dbh->do('TRUNCATE TABLE "public".users RESTART IDENTITY CASCADE');
     }
     else {
         warn("Turn on 'test' option in config")

@@ -1,24 +1,20 @@
-# загрузка данных о группе
-#    "id" => 1;
+use Mojo::Base -strict;
+
+use FindBin;
+BEGIN {
+    unshift @INC, "$FindBin::Bin/../lib";
+}
 
 use Test::More;
 use Test::Mojo;
-use FindBin;
+use Data::Dumper;
 
-use Mojo::JSON qw( decode_json );
-
-BEGIN {
-    unshift @INC, "$FindBin::Bin/../../lib";
-}
-
-my $t = Test::Mojo->new('Freee');
-
-# Включаем режим работы с тестовой базой и чистим таблицу
-$t->app->config->{test} = 1 unless $t->app->config->{test};
-clear_db();
+my $t = Test::Mojo->new('Houseapp');
 
 # Устанавливаем адрес
 my $host = $t->app->config->{'host'};
+
+clear_db();
 
 # получение токена для аутентификации
 $t->post_ok( $host.'/auth/login' => form => { 'login' => 'admin', 'password' => 'admin' } );
@@ -35,11 +31,12 @@ my $token = $response->{'data'}->{'token'};
 # Ввод данных для вывода
 diag "Add group:";
 my $data = {
-    'name'    => 'test',
-    'label'   => 'test',
-    'status'  => 1
+            'login'      => 'login',
+            'email'     => 'email',
+            'phone'    => 'phone',
+            'password'    => 'password'
 };
-$t->post_ok( $host.'/groups/add' => {token => $token} => form => $data );
+$t->post_ok( $host.'/user_data/add' => {token => $token} => form => $data );
 unless ( $t->status_is(200)->{tx}->{res}->{code} == 200  ) {
     diag("Can't connect");
     last;
@@ -56,7 +53,7 @@ my $test_data = {
         'result' => {
             'data'      => {
                 'id'        => 1,
-                'label'     => 'test',
+                'surname'     => 'test',
                 'name'      => 'test',
                 'status'    => 1
             },
@@ -71,14 +68,14 @@ my $test_data = {
             'id'        => 404
         },
         'result' => {
-            'message'   => "Could not get Group '404'",
+            'message'   => "Could not get user_data '404'",
             'status'    => 'fail'
         },
         'comment' => 'Wrong id:' 
     },
     3 => {
         'result' => {
-            'message'   => "/groups/edit _check_fields: didn't has required data in 'id' = ''",
+            'message'   => "/user_data/edit _check_fields: didn't has required data in 'id' = ''",
             'status'    => 'fail'
         },
         'comment' => 'No data:' 
@@ -88,7 +85,7 @@ my $test_data = {
             'id'        => - 404
         },
         'result' => {
-            'message'   => "/groups/edit _check_fields: empty field 'id', didn't match regular expression",
+            'message'   => "/user_data/edit _check_fields: empty field 'id', didn't match regular expression",
             'status'    => 'fail'
         },
         'comment' => 'Wrong input format:' 
@@ -99,7 +96,7 @@ foreach my $test (sort {$a <=> $b} keys %{$test_data}) {
     diag ( $$test_data{$test}{'comment'} );
     my $data = $$test_data{$test}{'data'};
     my $result = $$test_data{$test}{'result'};
-    $t->post_ok($host.'/groups/edit' => {token => $token} => form => $data )
+    $t->post_ok($host.'/user_data/edit' => {token => $token} => form => $data )
         ->status_is(200)
         ->content_type_is('application/json;charset=UTF-8')
         ->json_is( $result );
@@ -111,12 +108,11 @@ done_testing();
 # очистка тестовой таблицы
 sub clear_db {
     if ($t->app->config->{test}) {
-        $t->app->pg_dbh->do('ALTER SEQUENCE "public".groups_id_seq RESTART');
-        $t->app->pg_dbh->do('TRUNCATE TABLE "public".groups RESTART IDENTITY CASCADE');
+        $t->app->pg_dbh->do('ALTER SEQUENCE "public".user_datas_id_seq RESTART');
+        $t->app->pg_dbh->do('TRUNCATE TABLE "public".user_datas RESTART IDENTITY CASCADE');
     }
     else {
         warn("Turn on 'test' option in config")
     }
 }
-
 

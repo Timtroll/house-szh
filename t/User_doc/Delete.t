@@ -8,11 +8,11 @@ use Test::Mojo;
 use FindBin;
 use Mojo::JSON qw( decode_json );
 use Data::Dumper;
-use lib "$FindBin::Bin/../../lib";
+use lib "$FindBin::Bin/../lib";
 use common;
 
 BEGIN {
-    unshift @INC, "$FindBin::Bin/../../lib";
+    unshift @INC, "$FindBin::Bin/../lib";
 }
 my ( $t, $host, $picture_path, $data, $test_data, $result, $response, $token, $url, $regular, $file_path, $desc_path );
 $t = Test::Mojo->new('Freee');
@@ -88,7 +88,7 @@ $test_data = {
     3 => {
         'data' => {},
         'result' => {
-            'message'   => "/upload/delete _check_fields: didn't has required data in 'id' = ''",
+            'message'   => "/user_doc/delete _check_fields: didn't has required data in 'id' = ''",
             'status'    => 'fail'
         },
         'comment' => 'No data:' 
@@ -98,7 +98,7 @@ $test_data = {
             'id'        => - 404
         },
         'result' => {
-            'message'   => "/upload/delete _check_fields: empty field 'id', didn't match regular expression",
+            'message'   => "/user_doc/delete _check_fields: empty field 'id', didn't match regular expression",
             'status'    => 'fail'
         },
         'comment' => 'Wrong type of id:' 
@@ -112,7 +112,7 @@ foreach my $test (sort {$a <=> $b} keys %{$test_data}) {
     $result = $$test_data{$test}{'result'};
 
     # проверка запроса и ответа
-    $t->post_ok($host.'/upload/delete/' => {token => $token} => form => $data )
+    $t->post_ok($host.'/user_doc/delete/' => {token => $token} => form => $data )
         ->status_is(200)
         ->content_type_is('application/json;charset=UTF-8')
         ->json_is( $result );
@@ -135,8 +135,8 @@ done_testing();
 # очистка тестовой таблицы
 sub clear_db {
     if ($t->app->config->{test}) {
-        $t->app->pg_dbh->do('ALTER SEQUENCE "public".media_id_seq RESTART');
-        $t->app->pg_dbh->do('TRUNCATE TABLE "public".media RESTART IDENTITY CASCADE');
+        $t->app->pg_dbh->do('ALTER SEQUENCE "public".documents_id_seq RESTART');
+        $t->app->pg_dbh->do('TRUNCATE TABLE "public".documents RESTART IDENTITY CASCADE');
     }
     else {
         warn("Turn on 'test' option in config")

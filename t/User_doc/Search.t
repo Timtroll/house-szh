@@ -8,11 +8,11 @@ use FindBin;
 use Mojo::JSON qw( decode_json );
 use Data::Compare;
 use Data::Dumper;
-use lib "$FindBin::Bin/../../lib";
+use lib "$FindBin::Bin/../lib";
 use common;
 
 BEGIN {
-    unshift @INC, "$FindBin::Bin/../../lib";
+    unshift @INC, "$FindBin::Bin/../lib";
 }
 my ( $t, $host, $picture_path, $size, $data, $test_data, $result, $response, $token, $url, $regular, $desc_path, $file_path, $cmd );
 $t = Test::Mojo->new('Freee');
@@ -159,7 +159,7 @@ foreach my $test (sort {$a <=> $b} keys %{$test_data}) {
     $result = $$test_data{$test}{'result'};
 
     # проверка подключения
-    $t->post_ok($host.'/upload/search/' => {token => $token} => form => $data )
+    $t->post_ok($host.'/user_doc/search/' => {token => $token} => form => $data )
         ->status_is(200)
         ->content_type_is('application/json;charset=UTF-8');
 
@@ -183,8 +183,8 @@ done_testing();
 # очистка тестовой таблицы
 sub clear_db {
     if ($t->app->config->{test}) {
-        $t->app->pg_dbh->do('ALTER SEQUENCE "public".media_id_seq RESTART');
-        $t->app->pg_dbh->do('TRUNCATE TABLE "public".media RESTART IDENTITY CASCADE');
+        $t->app->pg_dbh->do('ALTER SEQUENCE "public".documents_id_seq RESTART');
+        $t->app->pg_dbh->do('TRUNCATE TABLE "public".documents RESTART IDENTITY CASCADE');
     }
     else {
         warn("Turn on 'test' option in config")
