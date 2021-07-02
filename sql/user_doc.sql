@@ -1,11 +1,10 @@
 --таблица
-DROP TABLE IF EXISTS "public"."documents";
-DROP SEQUENCE IF EXISTS "public".documents_id_seq; 
+DROP TABLE IF EXISTS "public"."user_doc";
+DROP SEQUENCE IF EXISTS "public".doc_id_seq; 
 
-CREATE SEQUENCE "public".documents_id_seq;
--- ALTER SEQUENCE "documents_id_seq" RESTART WITH 1;
+CREATE SEQUENCE "public".doc_id_seq;
 
-CREATE TABLE "public"."documents" (
+CREATE TABLE "public"."user_doc" (
     "id" int4 DEFAULT nextval('documents_id_seq'::regclass) NOT NULL,
     "new_name" varchar(255) COLLATE "default" NOT NULL,
     "old_name" varchar(255) COLLATE "default" NOT NULL,
@@ -17,8 +16,6 @@ CREATE TABLE "public"."documents" (
 )
 WITH (OIDS=FALSE);
 
-ALTER TABLE "public"."documents" OWNER TO "troll";
-ALTER TABLE "public"."documents" ADD CONSTRAINT name UNIQUE (name);
+ALTER TABLE "public"."user_doc" OWNER TO "troll";
 
-
-CREATE UNIQUE INDEX "documents_name_idx" ON "public"."documents" USING btree ("name");
+CREATE UNIQUE INDEX "documents_name_idx" ON "public"."user_doc" USING btree ("id");

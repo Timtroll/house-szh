@@ -27,85 +27,69 @@ warn 'error';
     $self->render( 'json' => { 'status' => 'fail', 'message' => $self->param('message') }, status => 666 );
 }
 
-# sub load {
-#     my $self = shift;
+sub login {
+    my $self = shift;
+warn '=login=';
 
-#     my ( $data, $resp );
+    my ($data, $resp, $token, $salt, $user, $expires );
 
-#     # проверка данных
-#     $data = $self->_check_fields();
+    # проверка данных   
+    $data = $self->_check_fields();
 
-#     # чистим кэш
-#     $cache = [];
-#     $cache_id = {};
-#     $cache_name = {};
+    if ($$data{'login'} && $$data{'password'}) {
+        # получение соли из конфига
+        $salt = $self->{'app'}->{'config'}->{'secrets'}->[0];
 
-#     $self->model('Basis')->_recursive_get( $$data{'id'} );
+        # шифрование пароля
+        $$data{'password'} = sha256_hex( $$data{'password'}, $salt );
 
-#     $resp->{'message'} = join("\n", @!) if @!;
-#     $resp->{'status'} = @! ? 0 : 1;
-#     $resp->{'data'} = $cache_id unless @!;
+        # проверяем наличие пользователя
+        $user = $self->model('User')->_exists_in_users( $$data{'login'}, $$data{'password'} );
 
-#     @! = ();
+        if ( $user ) {
+            # делаем token для пользователя
+            $token = $$user{'login'} . time() . $$user{'password'};
+            $salt = $self->{'app'}->{'config'}->{'secrets'}->[0];
+            $token = sha256_hex( $token, $salt );
 
-#     $self->render( 'json' => $cache );
-# }
+            # устанавливаем время жизни
+            $expires = time() + $$config{'expires'};
 
-# sub get_cache {
-#     my $self = shift;
+            # удаляем пароль из сессии
+            delete $$user{'password'};
 
-#     $self->render( 'json' => $cache_id );
-# }
+            # сохраняем токен в глобальном хранилище
+            $$tokens{$token} = $user;
+            $$tokens{$token}{'expires'} = $expires;
+        }
+    }
+    else {
+        push @!, 'Login or password or both are missing';
+    }
 
-# sub get_base {
-#     my $self = shift;
+    $resp->{'data'}->{'profile'} = $user if $user;
+    $resp->{'data'}->{'token'} = $token unless @!;
+    $resp->{'message'} = join("\n", @!) if @!;
+    $resp->{'status'} = @! ? 'fail' : 'ok';
 
-#     $self->render( 'json' => $base );
-# }
+    @! = ();
+    $self->render( json => $resp );
+}
 
-# sub set {
-#     my $self = shift;
+# route /logout
+# POST or GET поля не передаются (удаляется кука sessions)
+sub logout {
+    my ($self);
+    $self = shift;
 
-#     my ( $data, $resp );
+warn '=logout=';
+    # удаляем сессию, если она есть
+    if ( $self->req->headers->header('token') ) {
+        delete $$tokens{ $self->req->headers->header('token') };
+    }
 
-#     # проверка данных
-#     $data = $self->_check_fields();
-
-#     unless( @! ) {
-#         if ( $self->model('Basis')->_exist_item( $cache_name, $$data{'name'} ) ) {
-#             push @!, "name '$$data{'name'}' already used";
-#         }
-#     }
-
-#     unless( @! ) {
-#         if ( $$data{'id'} ) {
-#             unless ( $self->model('Basis')->_exist_item( $cache_id, $$data{'id'} ) ) {
-#                 push @!, "Could not find field '$$data{'id'}'";
-#             }
-#             else {
-#                 $self->model('Basis')->_update_element();
-#                 unshift @$queue, {'command' => 'update', 'id' => $$data{'id'} };                
-#             }
-#         }
-#         else {
-#             unless ( $self->model('Basis')->_exist_item( $cache_id, $$data{'parent'} ) ) {
-#                 push @!, "Could not find field '$$data{'parent'}'";
-#             }
-#             else {
-#                 $self->model('Basis')->_insert_element();
-#                 unshift @$queue, {'command' => 'add', 'id' => $$data{ $max_cache_id } };
-#             }
-#         }
-#     }
-
-#     $resp->{'message'} = join("\n", @!) if @!;
-#     $resp->{'status'} = @! ? 0 : 1;
-#     $resp->{'id'} = 1 unless @!;
-
-#     @! = ();
-
-#     $self->render( 'json' => $resp );
-# }
+    $self->render( json => { 'status' => 'ok' } );
+}
 
 
 1;
