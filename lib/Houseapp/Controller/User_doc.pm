@@ -22,7 +22,7 @@ sub index {
         $$data{'title'} = $$data{'filename'};
 
         # генерация случайного имени
-        $name_length = $settings->{'upload_name_length'};
+        $name_length = $config->{'upload_name_length'};
         $$data{'filename'} = $self->_random_string( $name_length );
         while ( $self->_exists_in_directory( './upload/'.$$data{'filename'} ) ) {
             $$data{'filename'} = $self->_random_string( $name_length );
@@ -34,11 +34,11 @@ sub index {
         $$data{'description'} = '' unless ( $$data{'description'} );
 
         # получение mime
-        $$data{'mime'} = $settings->{'valid_extensions'}->{$$data{'extension'}} || '';
+        $$data{'mime'} = $config->{'valid_extensions'}->{$$data{'extension'}} || '';
 
         # запись файла
         $result = write_file(
-            $settings->{'upload_local_path'} . $$data{'filename'} . '.' . $$data{'extension'},
+            $config->{'upload_local_path'} . $$data{'filename'} . '.' . $$data{'extension'},
             { binmode => ':utf8' },
             $$data{'content'}
         );
@@ -59,8 +59,8 @@ sub index {
 
     # создание файла с описанием
     unless ( @! ) {
-        $local_path = $settings->{'upload_local_path'};
-        $extension = $settings->{'desc_extension'};
+        $local_path = $config->{'upload_local_path'};
+        $extension = $config->{'desc_extension'};
         $write_result = write_file(
             $local_path . $$data{'filename'} . '.' . $extension,
             { binmode => ':utf8' },
@@ -71,7 +71,7 @@ sub index {
 
     # получение url
     unless ( @! ) {
-        $url = $settings->{'site_url'} . $settings->{'upload_url_path'} . $$data{'filename'} . '.' . $$data{ 'extension' };
+        $url = $config->{'site_url'} . $config->{'upload_url_path'} . $$data{'filename'} . '.' . $$data{ 'extension' };
     }
 
     $resp->{'message'} = join( "\n", @! ) if @!;
@@ -104,7 +104,7 @@ sub delete {
     # удаление файла
     unless ( @! ) {
         $filename = $$fileinfo{'filename'} . '.' . $$fileinfo{'extension'};
-        $local_path = $settings->{'upload_local_path'};
+        $local_path = $config->{'upload_local_path'};
         $full_path = $local_path . $filename;
         if ( $self->_exists_in_directory( $full_path ) ) {
             $cmd = `rm $full_path`;
@@ -157,8 +157,8 @@ sub search {
 
     # добавление данных об url
     unless ( @! ) {
-        $host = $settings->{'site_url'};
-        $url_path = $settings->{'upload_url_path'};
+        $host = $config->{'site_url'};
+        $url_path = $config->{'upload_url_path'};
         foreach my $row ( values %{$data} ) {
             $url = $host . $url_path . $$row{'filename'} . '.' . $$row{'extension'};
             delete @{$row}{'filename', 'extension'};
@@ -201,10 +201,10 @@ sub update {
     }
 
     # запись нового файла с описанием
-    $host = $settings->{'site_url'};
-    $local_path = $settings->{'upload_local_path'};
-    $url_path = $settings->{'upload_url_path'};
-    $desc_extension = $settings->{'desc_extension'};
+    $host = $config->{'site_url'};
+    $local_path = $config->{'upload_local_path'};
+    $url_path = $config->{'upload_url_path'};
+    $desc_extension = $config->{'desc_extension'};
     unless ( @! ) {
         $rewrite_result = write_file(
             $local_path . $$data{'filename'} . '.' . $desc_extension,

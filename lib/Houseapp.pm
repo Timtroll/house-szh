@@ -54,6 +54,8 @@ warn "+++++++++++";
     $r->post('/auth/login')               ->to('auth#login');
     $r->any('/auth/logout')               ->to('auth#logout');
 
+    $auth = $r->under()->to('auth#check_token');
+
     $auth->post('/user/index')        ->to('user#index');
     $auth->post('/user/add')          ->to('user#add');
     $auth->post('/user/edit')         ->to('user#edit');

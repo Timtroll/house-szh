@@ -2,7 +2,7 @@ use Mojo::Base -strict;
 
 use FindBin;
 BEGIN {
-    unshift @INC, "$FindBin::Bin/../lib";
+    unshift @INC, "$FindBin::Bin/../../lib";
 }
 
 use Test::More;
@@ -34,7 +34,13 @@ my $test_data = {
         'data' => {
             'name'      => 'name1',
             'surname'     => 'surname1',
-            'status'    => 1
+            'status'    => 1,
+            'login'      => 'login',
+            'email'     => 'email',
+            'phone'    => 'phone',
+            'password'    => 'password',
+            'description' => 'description',
+            upload => { file => $picture_path . 'all_right.svg' }
         },
         'result' => {
             'id'        => '1',
@@ -45,7 +51,13 @@ my $test_data = {
         'data' => {
             'name'      => 'name2',
             'surname'     => 'surname2',
-            'status'    => 1
+            'status'    => 1,
+            'login'      => 'login2',
+            'email'     => 'email2',
+            'phone'    => 'phone2',
+            'password'    => 'password2',
+            'description' => 'description',
+            upload => { file => $picture_path . 'all_right.svg' }
         },
         'result' => {
             'id'        => '2',

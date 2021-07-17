@@ -1,4 +1,4 @@
-package Freee::Model::User_doc;
+package Houseapp::Model::User_doc;
 
 use Mojo::Base 'Houseapp::Model::Base';
 
@@ -38,9 +38,20 @@ sub _insert_media {
         $sth->execute();
         $sth->finish();
 
-        $result = $sth->last_insert_id( undef, 'public', 'users', undef, { sequence => 'media_id_seq' } );
+        $result = $sth->last_insert_id( undef, 'public', 'user_doc', undef, { sequence => 'media_id_seq' } );
         $sth->finish();
         push @!, "Can not insert $$data{'title'}" unless $result;
+    }
+
+    unless ( @! ) {
+        $sql = 'INSERT INTO "public"."user_links" ( "first_id", "first_type", "second_id", "second_type" ) VALUES ( :first_id, :first_type, :second_id, :second_type )';
+        $sth = $self->{'app'}->pg_dbh->prepare( $sql );
+        $sth->bind_param( ':first_id', $$data{'id'} );
+        $sth->bind_param( ':first_type', 'user' );
+        $sth->bind_param( ':second_id', $result );
+        $sth->bind_param( ':second_type', 'user_doc' );
+        $sth->execute();
+        $sth->finish();
     }
 
     return $result;

@@ -1,9 +1,9 @@
 package Houseapp::Helpers::Validate;
 
+use utf8;
 use strict;
 use warnings;
 
-use utf8;
 
 use base 'Mojolicious::Plugin';
 
@@ -163,7 +163,7 @@ p %data;
 ################
             # роуты user_doc /*
             '/user_doc'  => {
-                "upload"        => [ 'file_required', undef, $settings->{'upload_max_size'} ],
+                "upload"        => [ 'file_required', undef, $config->{'upload_max_size'} ],
                 "description"   => [ '', qr/^[\w\ \-\~\!№\$\@\^\&\%\*\(\)\[\]\{\}=\;\:\|\\\|\/\?\>\<\,\.\/\"\']+$/os, 256 ]
             },
             '/user_doc/delete'  => {

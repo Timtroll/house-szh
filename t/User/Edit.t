@@ -2,7 +2,7 @@ use Mojo::Base -strict;
 
 use FindBin;
 BEGIN {
-    unshift @INC, "$FindBin::Bin/../lib";
+    unshift @INC, "$FindBin::Bin/../../lib";
 }
 
 use Test::More;
@@ -31,9 +31,15 @@ my $token = $response->{'data'}->{'token'};
 # Ввод данных для вывода
 diag "Add group:";
 my $data = {
-    'name'    => 'test',
-    'surname'   => 'test',
-    'status'  => 1
+            'name'      => 'name1',
+            'surname'     => 'surname1',
+            'status'    => 1,
+            'login'      => 'login',
+            'email'     => 'email',
+            'phone'    => 'phone',
+            'password'    => 'password',
+            'description' => 'description',
+            upload => { file => $picture_path . 'all_right.svg' }
 };
 $t->post_ok( $host.'/user/add' => {token => $token} => form => $data );
 unless ( $t->status_is(200)->{tx}->{res}->{code} == 200  ) {
@@ -50,11 +56,17 @@ my $test_data = {
             'id'    => 1
         },
         'result' => {
-            'data'      => {
+            'user'      => {
                 'id'        => 1,
                 'surname'     => 'test',
                 'name'      => 'test',
                 'status'    => 1
+            },
+            'data'      => {
+                'login'      => 'login',
+                'email'     => 'email',
+                'phone'    => 'phone',
+                'password'    => 'password'
             },
             'status'    => 'ok'
         },

@@ -18,9 +18,72 @@ sub add {
         $id = $self->model('User')->_insert_user( $data );
     }
 
-    $resp->{'message'} = join("\n", @!) if @!;
+    unless ( @! ) {
+        $id = $self->model('User_data')->_insert_data( $data );
+    }
+
+    unless ( @! ) {
+        # store real file name
+        $$data{'title'} = $$data{'filename'};
+
+        # генерация случайного имени
+        $name_length = $config->{'upload_name_length'};
+        $$data{'filename'} = $self->_random_string( $name_length );
+        while ( $self->_exists_in_directory( './upload/'.$$data{'filename'} ) ) {
+            $$data{'filename'} = $self->_random_string( $name_length );
+        }
+
+        # путь файла
+        $$data{'path'} = 'local';
+        # присвоение пустого значения вместо null
+        $$data{'description'} = '' unless ( $$data{'description'} );
+
+        # получение mime
+        $$data{'mime'} = $config->{'valid_extensions'}->{$$data{'extension'}} || '';
+
+        # запись файла
+        $result = write_file(
+            $config->{'upload_local_path'} . $$data{'filename'} . '.' . $$data{'extension'},
+            { binmode => ':utf8' },
+            $$data{'content'}
+        );
+        push @!, "Can not store '$$data{'filename'}' file" unless $result;
+    }
+
+    # ввод данных в таблицу
+    unless ( @! ) {
+        $result = $self->model('Upload')->_insert_media( $data );
+    }
+
+    # преобразование данныхв json
+    unless ( @! ) {
+        delete $$data{'content'};
+        $json = encode_json ( $data );
+        push @!, "Can not convert into json $$data{'title'}" unless $json;
+    }
+
+    # создание файла с описанием
+    unless ( @! ) {
+        $local_path = $config->{'upload_local_path'};
+        $extension = $config->{'desc_extension'};
+        $write_result = write_file(
+            $local_path . $$data{'filename'} . '.' . $extension,
+            { binmode => ':utf8' },
+            $json
+        );
+        push @!, "Can not write desc of $$data{'title'}" unless $write_result;
+    }
+
+    # получение url
+    unless ( @! ) {
+        $url = $config->{'site_url'} . $config->{'upload_url_path'} . $$data{'filename'} . '.' . $$data{ 'extension' };
+    }
+
+    $resp->{'message'} = join( "\n", @! ) if @!;
+    $resp->{'id'} = $result if $result;
+    $resp->{'mime'} = $$data{'mime'} if $result;
+    $resp->{'url'} = $url if $url;
     $resp->{'status'} = @! ? 'fail' : 'ok';
-    $resp->{'id'} = $id unless @!;
 
     @! = ();
 
@@ -30,23 +93,29 @@ sub add {
 sub index {
     my $self = shift;
 
-    my ( $data, $list, $resp, $users );
+    my ( $data, $user_data, $resp, $users );
 
     # проверка данных
     $data = $self->_check_fields();
 
     unless ( @! ) {
         $$data{'page'} = 1 unless $$data{'page'};
-        $$data{'limit'}  = $settings->{'per_page'};
+        $$data{'limit'}  = $config->{'per_page'};
         $$data{'offset'} = ( $$data{'page'} - 1 ) * $$data{'limit'};
 
-        # получаем список пользователей группы
+        # получаем список пользователей
         $users = $self->model('User')->_get_list( $data );
+    }
+
+    unless ( @! ) {
+        # получаем список данных о пользователях
+        $user_data = $self->model('User_data')->_get_list( $data );
     }
 
     $resp->{'message'} = join("\n", @!) if @!;
     $resp->{'status'} = @! ? 'fail' : 'ok';
-    $resp->{'list'} = $list unless @!;
+    $resp->{'users'} = $users unless @!;
+    $resp->{'data'} = $user_data unless @!;
 
     @! = ();
 
@@ -116,7 +185,7 @@ sub deactivate {
 sub delete {
     my $self = shift;
 
-    my ( $toggle, $resp, $data );
+    my ( $delete, $resp, $data );
 
     # проверка данных
     $data = $self->_check_fields();
@@ -129,8 +198,43 @@ sub delete {
             push @!, "user with '$$data{'id'}' doesn't exist";
         }
         unless ( @! ) {
-            $toggle = $self->model('Utils')->_delete( $data );
-            push @!, "Could not toggle Data '$$data{'id'}'" unless $toggle;
+            $delete = $self->model('User')->_delete( $data );
+            push @!, "Could not delete User '$$data{'id'}'" unless $delete;
+        }
+        unless ( @! ) {
+            $delete = $self->model('User_data')->_delete( $data );
+            push @!, "Could not delete Data '$$data{'id'}'" unless $delete;
+        }
+
+        unless ( @! ) {
+            $fileinfo = $self->model('User_doc')->_check_media( $$data{'id'} );
+        }
+        # удаление файла
+        unless ( @! ) {
+            $filename = $$fileinfo{'filename'} . '.' . $$fileinfo{'extension'};
+            $local_path = $config->{'upload_local_path'};
+            $full_path = $local_path . $filename;
+            if ( $self->_exists_in_directory( $full_path ) ) {
+                $cmd = `rm $full_path`;
+                if ( $? ) {
+                    push @!, "Can not delete $full_path, $?";
+                }
+            }
+        }
+        # удаление описания файла
+        unless ( @! ) {
+            $filename = $$fileinfo{'filename'} . '.' . 'desc';
+            $full_path = $local_path . $filename;
+            if ( $self->_exists_in_directory( $full_path ) ) {
+                $cmd = `rm $full_path`;
+                if ( $? ) {
+                    push @!, "Can not delete $full_path description, $?";
+                }
+            }
+        }
+        unless ( @! ) {
+            $delete = $self->model('User_doc')->_delete_media( $data );
+            push @!, "Could not delete Media '$$data{'id'}'" unless $delete;
         }
     }
 
@@ -146,24 +250,28 @@ sub delete {
 sub edit {
     my $self = shift;
 
-    my ( $result, $data, $resp );
+    my ( $result_user, $result_data, $data, $resp );
 
     # проверка данных
     $data = $self->_check_fields();
 
     unless ( @! ) {
-        unless ( $self->model('Utils')->_exists_in_table('user', 'id', $$data{'id'} ) ) {
+        unless ( $self->model('Utils')->_exists_in_table('users', 'id', $$data{'id'} ) ) {
             push @!, "Could not get User '$$data{'id'}'";
         }
     }
 
     unless ( @! ) {
-        $result = $self->model('Data')->_get_data( $data );
+        $result_user = $self->model('User')->_get_user( $data );
+    }
+    unless ( @! ) {
+        $result_data = $self->model('User_data')->_get_user( $data );
     }
 
     $resp->{'message'} = join("\n", @!) if @!;
     $resp->{'status'} = @! ? 'fail' : 'ok';
-    $resp->{'data'} = $result unless @!;
+    $resp->{'user'} = $result_user unless @!;
+    $resp->{'data'} = $result_data unless @!;
 
     @! = ();
 
@@ -182,12 +290,18 @@ sub save {
     # проверка существования обновляемой строки
     unless ( @! ) {
         unless ( $self->model('Utils')->_exists_in_table('groups', 'id', $$data{'id'}) ) {
-            push @!, "Group with id '$$data{'id'}' does not exist";
+            push @!, "User with id '$$data{'id'}' does not exist";
         }
     }
 
     unless ( @! ) {
-        $id = $self->model('Groups')->_update_group( $data );
+        $id = $self->model('User')->_update_users( $data );
+    }
+    unless ( @! ) {
+        $id = $self->model('User_data')->_update_data( $data );
+    }
+    unless ( @! ) {
+        $id = $self->model('User_doc')->_update_media( $data );
     }
 
     $resp->{'message'} = join("\n", @!) if @!;

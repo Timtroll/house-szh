@@ -19,6 +19,7 @@ use vars qw(
     $config
     $log
     $vfields
+    $tokens
 );
 
 use Data::Dumper;
@@ -31,6 +32,7 @@ our $cache    = [];
 our $cache_id   = {};
 our $cache_name   = {};
 our $queue   = {};
+our $tokens   = {};
 
 @ISA = qw( Exporter );
 @EXPORT = qw(
@@ -40,6 +42,7 @@ our $queue   = {};
     $config
     $log
     $vfields
+    $tokens
 );
 @EXPORT_OK = qw(
     &rel_file
@@ -48,6 +51,7 @@ our $queue   = {};
     $config
     $log
     $vfields
+    $tokens
 );
 
 # Find and manage the project root directory

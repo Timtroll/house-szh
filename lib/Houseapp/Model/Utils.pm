@@ -68,20 +68,6 @@ sub _deactivate {
     return $result;
 }
 
-sub _delete {
-    my ($self, $data) = @_;
-
-    return unless ( $data || $$data{'table'} || $$data{'id'} );
-
-    my $result;
-    my $sql ='UPDATE "public"."'.$$data{'table'}.'" SET "status"=2 WHERE "id"='.$$data{'id'};
-
-    $result = $self->{app}->pg_dbh->do($sql);
-    $result = $result ? $result : 0;
-
-    return $result;
-}
-
 # получение значения поля folder по id
 # my $true = $self->model('Utils')->_folder_check( <id> );
 # возвращается 1/0

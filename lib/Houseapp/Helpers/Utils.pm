@@ -12,6 +12,34 @@ use Data::Dumper;
 
 use constant DEBUGGING => 1;
 
+sub register {
+    my ($self, $app) = @_;
+
+    # генерация строки из случайных букв и цифр
+    # my $string = _random_string( length );
+    # возвращается строка
+    $app->helper('_random_string' => sub {
+        my ( $self, $length ) = @_;
+
+        return unless $length =~ /^\d+$/;
+
+        my @chars = ( "A".."Z", "a".."z", 0..9 );
+        my $string = join("", @chars[ map { rand @chars } ( 1 .. $length ) ]);
+
+    });
+
+    # проверка на наличие файла в директории
+    # my $true = _exists_in_directory( directory/file.extension );
+    # возвращается true/false
+    $app->helper('_exists_in_directory' => sub {
+        my ($self, $directory) = @_;
+
+        return unless $directory;
+
+        return -f $directory;
+    });
+}
+
 # проверяем наличие таблицы и указанное поле на дубликат
 # my $row = $self->model('Utils')->_exists_in_table(<table>, '<id>', <value>, <exclude_id>);
 #  <table>       - имя таблицы, где будем искать
