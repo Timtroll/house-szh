@@ -5,7 +5,7 @@ DROP SEQUENCE IF EXISTS "public".data_id_seq;
 CREATE SEQUENCE "public".data_id_seq;
 
 CREATE TABLE "public"."user_data" (
-    "id" int4 DEFAULT nextval('users_id_seq'::regclass) NOT NULL,
+    "id" int4 DEFAULT nextval('data_id_seq'::regclass) NOT NULL,
     "name" varchar(255) COLLATE "default" NOT NULL,
     "surname" varchar(255) COLLATE "default" NOT NULL,
     "patronymic" varchar(255) COLLATE "default" NOT NULL,
