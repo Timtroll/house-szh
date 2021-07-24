@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="/css/w2ui-1.5.css" />
+    <link rel="stylesheet" type="text/css" href="/css/maun.css" />
+    <link rel="stylesheet" type="text/css" href="/css/style.css" />
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/w2ui-1.5.js"></script>
+</head>
+<body>
+
+<div class="parent">
+    <div id="form" class="block">
+        <div class="">
+            <div class="w2ui-field">
+                <div>
+                    <input name="login" type="text" maxlength="30" size="30"/>
+                </div>
+            </div>
+            <div class="w2ui-field">
+                <div>
+                    <input name="pass" type="password" maxlength="30" size="30"/>
+                </div>
+            </div>
+        </div>
+
+        <div class="w2ui-buttons">
+            <button class="w2ui-btn" name="reset">Reset</button>
+            <button class="w2ui-btn w2ui-btn-blue" name="login">Login</button>
+        </div>
+    </div>
+</div>
+
+</body>
+<script type="text/javascript">
+$(function () {
+    $('#form').w2form({
+        name  : 'form',
+        url   : '/login',
+        fields: [
+            { field: 'login', type: 'text', class: '', required: true },
+            { field: 'pass',  type: 'pass', class: '', required: true },
+        ],
+        actions: {
+            reset: function () {
+                this.clear();
+            },
+            login: function () {
+                this.save();
+            }
+        }
+    });
+});
+</script>
+</html>

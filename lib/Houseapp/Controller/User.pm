@@ -9,7 +9,7 @@ use Data::Dumper;
 sub add {
     my $self = shift;
 
-    my ( $id, $data, $resp );
+    my ( $id, $data, $resp, $result, $json, $url );
 
     # проверка данных
     $data = $self->_check_fields();
@@ -27,7 +27,7 @@ sub add {
         $$data{'title'} = $$data{'filename'};
 
         # генерация случайного имени
-        $name_length = $config->{'upload_name_length'};
+        my $name_length = $config->{'upload_name_length'};
         $$data{'filename'} = $self->_random_string( $name_length );
         while ( $self->_exists_in_directory( './upload/'.$$data{'filename'} ) ) {
             $$data{'filename'} = $self->_random_string( $name_length );
@@ -42,12 +42,12 @@ sub add {
         $$data{'mime'} = $config->{'valid_extensions'}->{$$data{'extension'}} || '';
 
         # запись файла
-        $result = write_file(
+        my $res = write_file(
             $config->{'upload_local_path'} . $$data{'filename'} . '.' . $$data{'extension'},
             { binmode => ':utf8' },
             $$data{'content'}
         );
-        push @!, "Can not store '$$data{'filename'}' file" unless $result;
+        push @!, "Can not store '$$data{'filename'}' file" unless $res;
     }
 
     # ввод данных в таблицу
@@ -55,7 +55,7 @@ sub add {
         $result = $self->model('Upload')->_insert_media( $data );
     }
 
-    # преобразование данныхв json
+    # преобразование данных в json
     unless ( @! ) {
         delete $$data{'content'};
         $json = encode_json ( $data );
@@ -64,9 +64,9 @@ sub add {
 
     # создание файла с описанием
     unless ( @! ) {
-        $local_path = $config->{'upload_local_path'};
-        $extension = $config->{'desc_extension'};
-        $write_result = write_file(
+        my $local_path = $config->{'upload_local_path'};
+        my $extension = $config->{'desc_extension'};
+        my $write_result = write_file(
             $local_path . $$data{'filename'} . '.' . $extension,
             { binmode => ':utf8' },
             $json
@@ -185,7 +185,7 @@ sub deactivate {
 sub delete {
     my $self = shift;
 
-    my ( $delete, $resp, $data );
+    my ( $delete, $resp, $data, $fileinfo, $filename, $local_path, $full_path );
 
     # проверка данных
     $data = $self->_check_fields();
@@ -215,7 +215,7 @@ sub delete {
             $local_path = $config->{'upload_local_path'};
             $full_path = $local_path . $filename;
             if ( $self->_exists_in_directory( $full_path ) ) {
-                $cmd = `rm $full_path`;
+                my $cmd = `rm $full_path`;
                 if ( $? ) {
                     push @!, "Can not delete $full_path, $?";
                 }
@@ -226,7 +226,7 @@ sub delete {
             $filename = $$fileinfo{'filename'} . '.' . 'desc';
             $full_path = $local_path . $filename;
             if ( $self->_exists_in_directory( $full_path ) ) {
-                $cmd = `rm $full_path`;
+                my $cmd = `rm $full_path`;
                 if ( $? ) {
                     push @!, "Can not delete $full_path description, $?";
                 }

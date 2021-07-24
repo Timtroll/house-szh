@@ -44,7 +44,7 @@ sub _insert_media {
     }
 
     unless ( @! ) {
-        $sql = 'INSERT INTO "public"."user_links" ( "first_id", "first_type", "second_id", "second_type" ) VALUES ( :first_id, :first_type, :second_id, :second_type )';
+        my $sql = 'INSERT INTO "public"."user_links" ( "first_id", "first_type", "second_id", "second_type" ) VALUES ( :first_id, :first_type, :second_id, :second_type )';
         $sth = $self->{'app'}->pg_dbh->prepare( $sql );
         $sth->bind_param( ':first_id', $$data{'id'} );
         $sth->bind_param( ':first_type', 'user' );

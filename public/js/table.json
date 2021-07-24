@@ -1,0 +1,5 @@
+[
+    {"name" : "abc", "age" : 50},
+    {"age" : "25", "hobby" : "swimming"},
+    {"name" : "xyz", "hobby" : "programming"}
+]
