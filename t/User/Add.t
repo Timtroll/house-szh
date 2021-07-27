@@ -16,7 +16,10 @@ $t = Test::Mojo->new('Houseapp');
 # Устанавливаем адрес
 $host = $t->app->config->{'host'};
 
-clear_db();
+# clear_db();
+
+# путь к директории с файлами
+$picture_path = './t/User/files/';
 
 # получение токена для аутентификации
 $t->post_ok( $host.'/auth/login' => form => { 'login' => 'admin', 'password' => 'admin' } );
@@ -29,7 +32,7 @@ diag "";
 $response = decode_json $t->{'tx'}->{'res'}->{'content'}->{'asset'}->{'content'};
 $token = $response->{'data'}->{'token'};
 
-my $test_data = {
+$test_data = {
     # положительные тесты
     1 => {
         'data' => {
@@ -137,64 +140,64 @@ foreach my $test (sort {$a <=> $b} keys %{$test_data}) {
     }
     $t->content_type_is('application/json;charset=UTF-8');
 
-    # проверка данных ответа
-    $response = decode_json $t->{'tx'}->{'res'}->{'content'}->{'asset'}->{'content'};
-    # url проверяется отдельно, так как оно генерируется случайно
-    $url = $$response{'url'};
-    delete $response->{'url'};
-    ok( Compare( $result, $response ), "Response is correct" );
+    # # проверка данных ответа
+    # $response = decode_json $t->{'tx'}->{'res'}->{'content'}->{'asset'}->{'content'};
+    # # url проверяется отдельно, так как оно генерируется случайно
+    # $url = $$response{'url'};
+    # delete $response->{'url'};
+    # ok( Compare( $result, $response ), "Response is correct" );
 
-    # дополнительные проверки работы положительных запросов
-    if ( $$result{'status'} eq 'ok' ) {
+    # # дополнительные проверки работы положительных запросов
+    # if ( $$result{'status'} eq 'ok' ) {
 
-        # составление списка возможных расширений
-        $extension = '(';
-        foreach ( keys %{$settings->{'valid_extensions'}} ) {
-            $extension = $extension . $_ . '|';
-        }
-        $extension =~ s/\|$/)/;
+    #     # составление списка возможных расширений
+    #     $extension = '(';
+    #     foreach ( keys %{$settings->{'valid_extensions'}} ) {
+    #         $extension = $extension . $_ . '|';
+    #     }
+    #     $extension =~ s/\|$/)/;
 
-        # регулярное выражение для проверки url
-        $regular = '^' . $settings->{'site_url'} . $settings->{'upload_url_path'} . '([\w]{48}' . ').(' . $extension . ')$';
-        ok( $url =~ /$regular/, "Url is correct" );
+    #     # регулярное выражение для проверки url
+    #     $regular = '^' . $settings->{'site_url'} . $settings->{'upload_url_path'} . '([\w]{48}' . ').(' . $extension . ')$';
+    #     ok( $url =~ /$regular/, "Url is correct" );
 
-        # проверка размера загруженного файла
-        $file_path = $settings->{'upload_local_path'} . $1 . '.' . $2;
-        ok( -s $file_path == $size, "Download was successful");
+    #     # проверка размера загруженного файла
+    #     $file_path = $settings->{'upload_local_path'} . $1 . '.' . $2;
+    #     ok( -s $file_path == $size, "Download was successful");
 
-        # проверка содержимого файла описания
-        $desc_path = $settings->{'upload_local_path'} . $1 . '.' . $settings->{'desc_extension'};
-        $description = read_file( $desc_path, { binmode => ':utf8' } );
-        $description = decode_json $description;
+    #     # проверка содержимого файла описания
+    #     $desc_path = $settings->{'upload_local_path'} . $1 . '.' . $settings->{'desc_extension'};
+    #     $description = read_file( $desc_path, { binmode => ':utf8' } );
+    #     $description = decode_json $description;
 
-        ok( 
-            $$description{'description'} eq $$data{'description'} &&
-            $$description{'mime'} eq $$result{'mime'} &&
-            $$description{'filename'} eq $1 &&
-            $$description{'extension'} eq $2 &&
-            $$description{'title'} eq 'all_right.svg' &&
-            $$description{'size'} == $size,
-            "Description is correct"
-        );
+    #     ok( 
+    #         $$description{'description'} eq $$data{'description'} &&
+    #         $$description{'mime'} eq $$result{'mime'} &&
+    #         $$description{'filename'} eq $1 &&
+    #         $$description{'extension'} eq $2 &&
+    #         $$description{'title'} eq 'all_right.svg' &&
+    #         $$description{'size'} == $size,
+    #         "Description is correct"
+    #     );
 
-        # удаление загруженных файлов
-        $cmd = `rm $file_path $desc_path`;
-        ok( !$?, "Files were deleted");
-    }
+    #     # удаление загруженных файлов
+    #     $cmd = `rm $file_path $desc_path`;
+    #     ok( !$?, "Files were deleted");
+    # }
     diag "";
 };
-clear_db();
+# clear_db();
 
 done_testing();
 
 # очистка тестовой таблицы
-sub clear_db {
-    if ($t->app->config->{test}) {
-        $t->app->pg_dbh->do('ALTER SEQUENCE "public".users_id_seq RESTART');
-        $t->app->pg_dbh->do('TRUNCATE TABLE "public".users RESTART IDENTITY CASCADE');
-    }
-    else {
-        warn("Turn on 'test' option in config")
-    }
-}
+# sub clear_db {
+#     if ($t->app->config->{test}) {
+#         $t->app->pg_dbh->do('ALTER SEQUENCE "public".users_id_seq RESTART');
+#         $t->app->pg_dbh->do('TRUNCATE TABLE "public".users RESTART IDENTITY CASCADE');
+#     }
+#     else {
+#         warn("Turn on 'test' option in config")
+#     }
+# }
 

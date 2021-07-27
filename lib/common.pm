@@ -20,6 +20,7 @@ use vars qw(
     $log
     $vfields
     $tokens
+    $dbh
 );
 
 use Data::Dumper;
@@ -34,6 +35,9 @@ our $cache_name   = {};
 our $queue   = {};
 our $tokens   = {};
 
+# vars for Graph database
+my $dbh = {};
+
 @ISA = qw( Exporter );
 @EXPORT = qw(
     &rel_file
@@ -43,6 +47,7 @@ our $tokens   = {};
     $log
     $vfields
     $tokens
+    $dbh
 );
 @EXPORT_OK = qw(
     &rel_file
@@ -52,6 +57,7 @@ our $tokens   = {};
     $log
     $vfields
     $tokens
+    $dbh
 );
 
 # Find and manage the project root directory

@@ -22,11 +22,7 @@ sub index {
         $$data{'title'} = $$data{'filename'};
 
         # генерация случайного имени
-        $name_length = $config->{'upload_name_length'};
-        $$data{'filename'} = $self->_random_string( $name_length );
-        while ( $self->_exists_in_directory( './upload/'.$$data{'filename'} ) ) {
-            $$data{'filename'} = $self->_random_string( $name_length );
-        }
+        $$data{'filename'} = sha256_hex( $$data{'filename'}, $salt );
 
         # путь файла
         $$data{'path'} = 'local';

@@ -32,6 +32,8 @@ sub startup {
     $self->plugin('Houseapp::Helpers::Validate');
     $vfields = $self->_param_fields();
 
+    # init Pg connection
+    $dbh = $self->pg_dbh();
 
     # подгружаем модель и создадим соответствующий хелпер для вызова модели + передадим ссылки на $self
     my $model = Houseapp::Model->new( app => $self );

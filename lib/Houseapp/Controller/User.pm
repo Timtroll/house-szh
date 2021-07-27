@@ -5,16 +5,20 @@ use utf8;
 use Mojo::Base 'Mojolicious::Controller';
 use common;
 use Data::Dumper;
+use Digest::SHA qw( sha256_hex );
 
 sub add {
     my $self = shift;
 
-    my ( $id, $data, $resp );
+    my ( $id, $data, $result, $filename, $resp, $url, $json, $local_path, $extension, $write_result, $name_length );
 
     # проверка данных
     $data = $self->_check_fields();
 
     unless ( @! ) {
+        # преобразование паоля
+        $$data{'password'} = sha256_hex( $$data{'password'}, $salt );
+
         $id = $self->model('User')->_insert_user( $data );
     }
 
@@ -27,11 +31,7 @@ sub add {
         $$data{'title'} = $$data{'filename'};
 
         # генерация случайного имени
-        $name_length = $config->{'upload_name_length'};
-        $$data{'filename'} = $self->_random_string( $name_length );
-        while ( $self->_exists_in_directory( './upload/'.$$data{'filename'} ) ) {
-            $$data{'filename'} = $self->_random_string( $name_length );
-        }
+        $$data{'filename'} = sha256_hex( $$data{'filename'}, $salt );
 
         # путь файла
         $$data{'path'} = 'local';
@@ -185,7 +185,7 @@ sub deactivate {
 sub delete {
     my $self = shift;
 
-    my ( $delete, $resp, $data );
+    my ( $delete, $resp, $data, $fileinfo, $filename, $local_path, $full_path, $cmd );
 
     # проверка данных
     $data = $self->_check_fields();

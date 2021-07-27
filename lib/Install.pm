@@ -34,7 +34,7 @@ $path_log = './log/migration.log';
 $path_sql = './sql';
 
 # путь к директории с конифгурацией
-$path_conf = './freee.conf';
+$path_conf = './house.conf';
 
 # логирование ошибки
 # logging( "комментарий и текст ошибки" );
@@ -198,10 +198,10 @@ sub create_tables {
 sub load_defaults {
     my ( $self, $config_users, $host, $salt ) = @_;
 
-    # загрузка дефолтных настроек
-    my $url = $host . '/settings/load_default';
-    # --spider - не загружать файл с ответом
-    `wget --wait=3 --tries=3 --retry-connrefused --spider $url`;
+    # # загрузка дефолтных настроек
+    # my $url = $host . '/settings/load_default';
+    # # --spider - не загружать файл с ответом
+    # `wget --wait=3 --tries=3 --retry-connrefused --spider $url`;
 
     $config_users->{'users'}->{'password'} = sha256_hex( $config_users->{'users'}->{'password'}, $salt );
     add_user( $self, $config_users->{'users'} );
