@@ -110,7 +110,7 @@ sub _exists_in_users {
         $sth->bind_param( ':login', $login );
         $sth->bind_param( ':password', $pass);
         $sth->execute();
-        $row = $sth->fetchall_hashref('login');
+        $row = $sth->fetchall_hashref('id');
         $sth->finish();
 
         if ( ref($row) eq 'HASH' && keys %$row && !@! ) {

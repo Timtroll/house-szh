@@ -36,14 +36,15 @@ $test_data = {
     # положительные тесты
     1 => {
         'data' => {
-            'name'      => 'name1',
-            'surname'     => 'surname1',
+            'name'      => $t->app->_random_string( 24 ),
+            'surname'     => $t->app->_random_string( 24 ),
             'status'    => 1,
-            'login'      => 'login',
-            'email'     => 'email',
-            'phone'    => 'phone',
-            'password'    => 'password',
-            'description' => 'description',
+            'login'      => $t->app->_random_string( 16 ),
+            'email'     => $t->app->_random_string( 24 ),
+            'phone'    => '7(921)1111111',
+            'password'    => $t->app->_random_string( 32 ),
+            'description' => $t->app->_random_string( 256 ),
+            'patronymic' => $t->app->_random_string( 24 ),
             upload => { file => $picture_path . 'all_right.svg' }
         },
         'result' => {
@@ -56,13 +57,15 @@ $test_data = {
     # отрицательные тесты
     2 => {
         'data' => {
-            'surname'     => 'surname2',
+            'name'      => $t->app->_random_string( 24 ),
+            'surname'     => $t->app->_random_string( 24 ),
             'status'    => 1,
-            'login'      => 'login2',
-            'email'     => 'email2',
-            'phone'    => 'phone2',
-            'password'    => 'password2',
-            'description' => 'description2',
+            'login'      => $t->app->_random_string( 16 ),
+            'email'     => $t->app->_random_string( 24 ),
+            'phone'    => '7(921)1111111',
+            'password'    => $t->app->_random_string( 32 ),
+            'description' => $t->app->_random_string( 256 ),
+            'patronymic' => $t->app->_random_string( 24 ),
             upload => { file => $picture_path . 'all_right.svg' }
         },
         'result' => {
@@ -73,14 +76,15 @@ $test_data = {
     },
     3 => {
         'data' => {
-            'name'      => 'name1',
-            'surname'     => 'surname3',
+            'name'      => $t->app->_random_string( 24 ),
+            'surname'     => $t->app->_random_string( 24 ),
             'status'    => 1,
-            'login'      => 'login3',
-            'email'     => 'email3',
-            'phone'    => 'phone3',
-            'password'    => 'password3',
-            'description' => 'description3',
+            'login'      => $t->app->_random_string( 16 ),
+            'email'     => $t->app->_random_string( 24 ),
+            'phone'    => '7(921)1111111',
+            'password'    => $t->app->_random_string( 32 ),
+            'description' => $t->app->_random_string( 256 ),
+            'patronymic' => $t->app->_random_string( 24 ),
             upload => { file => $picture_path . 'all_right.svg' }
         },
         'result' => {
@@ -91,33 +95,16 @@ $test_data = {
     },
     4 => {
         'data' => {
-            'name'      => 'name1',
-            'surname'     => 'surname4',
+            'name'      => $t->app->_random_string( 24 ),
+            'surname'     => $t->app->_random_string( 24 ),
             'status'    => 1,
-            'login'      => 'login4',
-            'email'     => 'email4',
-            'phone'    => 'phone4',
-            'password'    => 'password4',
-            'description' => 'description4',
+            'login'      => $t->app->_random_string( 16 ),
+            'email'     => $t->app->_random_string( 24 ),
+            'phone'    => '7(921)1111111',
+            'password'    => $t->app->_random_string( 32 ),
+            'description' => $t->app->_random_string( 256 ),
+            'patronymic' => $t->app->_random_string( 24 ),
             upload => { file => $picture_path . 'all_right.svg' }
-        },
-        'result' => {
-            'message'    => "surname 'surname1' already exists",
-            'status'     => 'fail'
-        },
-        'comment' => 'Same surname:'
-    },
-    5 => {
-        'data' => {
-            'name'      => 'name5',
-            'surname'     => 'surname5',
-            'status'    => 1,
-            'login'      => 'login5',
-            'email'     => 'email5',
-            'phone'    => 'phone5',
-            'password'    => 'password5',
-            'description' => 'description5',
-            upload => { file => $picture_path . 'no_extension' }
         },
         'result' => {
             'message'    => "surname 'surname1' already exists",
@@ -139,9 +126,12 @@ foreach my $test (sort {$a <=> $b} keys %{$test_data}) {
         last;
     }
     $t->content_type_is('application/json;charset=UTF-8');
+    # $t->json_is( $result, Dumper $result );
+    $t->json_is( $result );
 
-    # # проверка данных ответа
-    # $response = decode_json $t->{'tx'}->{'res'}->{'content'}->{'asset'}->{'content'};
+    # проверка данных ответа
+    $response = decode_json $t->{'tx'}->{'res'}->{'content'}->{'asset'}->{'content'};
+
     # # url проверяется отдельно, так как оно генерируется случайно
     # $url = $$response{'url'};
     # delete $response->{'url'};
@@ -187,6 +177,42 @@ foreach my $test (sort {$a <=> $b} keys %{$test_data}) {
     diag "";
 };
 # clear_db();
+
+$test_data = {
+    # положительные тесты
+    1 => {
+        'data' => {
+            'id'    => 2
+        },
+        'result' => {
+            'user'      => {
+                'id'        => 1,
+                'surname'     => 'test',
+                'name'      => 'test',
+                'status'    => 1
+            },
+            'data'      => {
+                'login'      => 'login',
+                'email'     => 'email',
+                'phone'    => '8(921)111111',
+                'password'    => 'password'
+            },
+            'status'    => 'ok'
+        },
+        'comment' => 'All right:'
+    },
+};
+
+foreach my $test (sort {$a <=> $b} keys %{$test_data}) {
+    diag ( $$test_data{$test}{'comment'} );
+    $data = $$test_data{$test}{'data'};
+    $result = $$test_data{$test}{'result'};
+    $t->post_ok($host.'/user/edit' => {token => $token} => form => $data )
+        ->status_is(200)
+        ->content_type_is('application/json;charset=UTF-8')
+        ->json_is( $result );
+    diag "";
+};
 
 done_testing();
 

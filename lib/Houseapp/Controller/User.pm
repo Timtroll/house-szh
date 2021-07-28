@@ -6,20 +6,24 @@ use Mojo::Base 'Mojolicious::Controller';
 use common;
 use Data::Dumper;
 use Digest::SHA qw( sha256_hex );
+use Mojo::JSON qw( encode_json );
 
 sub add {
     my $self = shift;
 
-    my ( $id, $data, $result, $filename, $resp, $url, $json, $local_path, $extension, $write_result, $name_length );
+    my ( $id, $data, $result, $filename, $resp, $url, $json, $local_path, $extension, $write_result, $name_length, $salt );
 
     # проверка данных
     $data = $self->_check_fields();
 
     unless ( @! ) {
+        # получение соли из конфига
+        $salt = $self->{'app'}->{'config'}->{'secrets'}->[0];
+
         # преобразование паоля
         $$data{'password'} = sha256_hex( $$data{'password'}, $salt );
 
-        $id = $self->model('User')->_insert_user( $data );
+        $$data{'id'} = $self->model('User')->_insert_user( $data );
     }
 
     unless ( @! ) {
@@ -33,10 +37,11 @@ sub add {
         # генерация случайного имени
         $$data{'filename'} = sha256_hex( $$data{'filename'}, $salt );
 
-        # путь файла
-        $$data{'path'} = 'local';
         # присвоение пустого значения вместо null
         $$data{'description'} = '' unless ( $$data{'description'} );
+
+        # получение точного времени
+        $$data{'time_create'} = $self->model('Utils')->_sec2date( time() );
 
         # получение mime
         $$data{'mime'} = $config->{'valid_extensions'}->{$$data{'extension'}} || '';
@@ -52,12 +57,12 @@ sub add {
 
     # ввод данных в таблицу
     unless ( @! ) {
-        $result = $self->model('Upload')->_insert_media( $data );
+        $result = $self->model('User_doc')->_insert_media( $data );
     }
 
-    # преобразование данныхв json
+    # преобразование данных в json
     unless ( @! ) {
-        delete $$data{'content'};
+        # delete $$data{'content'};
         $json = encode_json ( $data );
         push @!, "Can not convert into json $$data{'title'}" unless $json;
     }

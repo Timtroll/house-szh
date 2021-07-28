@@ -30,6 +30,7 @@ sub startup {
 
     $self->plugin('Houseapp::Helpers::Utils');
     $self->plugin('Houseapp::Helpers::Validate');
+    $self->plugin('Houseapp::Helpers::PgGraph');
     $vfields = $self->_param_fields();
 
     # init Pg connection
