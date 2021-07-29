@@ -3955,8 +3955,7 @@ w2utils.event = {
             'add'      : { type: 'button', id: 'w2ui-add', text: 'Add New', tooltip: 'Add new record', icon: 'w2ui-icon-plus' },
             'edit'     : { type: 'button', id: 'w2ui-edit', text: 'Edit', tooltip: 'Edit selected record', icon: 'w2ui-icon-pencil', disabled: true },
             'delete'   : { type: 'button', id: 'w2ui-delete', text: 'Delete', tooltip: 'Delete selected records', icon: 'w2ui-icon-cross', disabled: true },
-            'save'     : { type: 'button', id: 'w2ui-save', text: 'Save', tooltip: 'Save changed records', icon: 'w2ui-icon-check' },
-            'login'    : { type: 'button', id: 'w2ui-login', text: 'Save', tooltip: 'Login page', icon: 'w2ui-icon-check' }
+            'save'     : { type: 'button', id: 'w2ui-save', text: 'Save', tooltip: 'Save changed records', icon: 'w2ui-icon-check' }
         },
 
         operators: { // for search fields
@@ -6327,37 +6326,6 @@ w2utils.event = {
 
         // ===================================================
         // --  Action Handlers
-
-        login: function (callBack) {
-console.log('-----');
-            var obj = this;
-            var changes = this.getChanges();
-            var url = (typeof this.url != 'object' ? this.url : this.url.login);
-            // event before
-            var edata = this.trigger({ phase: 'before', target: this.name, type: 'login', changes: changes });
-            if (edata.isCancelled === true) {
-                if (url && typeof callBack == 'function') callBack({ status: 'error', message: 'Request aborted.' });
-                return;
-            }
-            if (url) {
-                this.request('login', { 'changes' : edata.changes }, null,
-                    function (data) {
-                        if (data.status !== 'error') {
-                            // only merge changes, if login was successful
-                            obj.mergeChanges();
-                        }
-                        // event after
-                        obj.trigger($.extend(edata, { phase: 'after' }));
-                        // call back
-                        if (typeof callBack == 'function') callBack(data);
-                    }
-                );
-            } else {
-                this.mergeChanges();
-                // event after
-                this.trigger($.extend(edata, { phase: 'after' }));
-            }
-        },
 
         save: function (callBack) {
             var obj = this;

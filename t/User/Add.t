@@ -16,7 +16,10 @@ $t = Test::Mojo->new('Houseapp');
 # Устанавливаем адрес
 $host = $t->app->config->{'host'};
 
-clear_db();
+# clear_db();
+
+# путь к директории с файлами 
+$picture_path = './t/User/files/';
 
 # получение токена для аутентификации
 $t->post_ok( $host.'/auth/login' => form => { 'login' => 'admin', 'password' => 'admin' } );
@@ -29,18 +32,19 @@ diag "";
 $response = decode_json $t->{'tx'}->{'res'}->{'content'}->{'asset'}->{'content'};
 $token = $response->{'data'}->{'token'};
 
-my $test_data = {
+$test_data = {
     # положительные тесты
     1 => {
         'data' => {
-            'name'      => 'name1',
-            'surname'     => 'surname1',
+            'name'      => $t->app->_random_string( 24 ),
+            'surname'     => $t->app->_random_string( 24 ),
             'status'    => 1,
-            'login'      => 'login',
-            'email'     => 'email',
-            'phone'    => 'phone',
-            'password'    => 'password',
-            'description' => 'description',
+            'login'      => $t->app->_random_string( 16 ),
+            'email'     => $t->app->_random_string( 24 ),
+            'phone'    => '7(921)1111111',
+            'password'    => $t->app->_random_string( 32 ),
+            'description' => $t->app->_random_string( 256 ),
+            'patronymic' => $t->app->_random_string( 24 ),
             upload => { file => $picture_path . 'all_right.svg' }
         },
         'result' => {
@@ -53,13 +57,15 @@ my $test_data = {
     # отрицательные тесты
     2 => {
         'data' => {
-            'surname'     => 'surname2',
+            'name'      => $t->app->_random_string( 24 ),
+            'surname'     => $t->app->_random_string( 24 ),
             'status'    => 1,
-            'login'      => 'login2',
-            'email'     => 'email2',
-            'phone'    => 'phone2',
-            'password'    => 'password2',
-            'description' => 'description2',
+            'login'      => $t->app->_random_string( 16 ),
+            'email'     => $t->app->_random_string( 24 ),
+            'phone'    => '7(921)1111111',
+            'password'    => $t->app->_random_string( 32 ),
+            'description' => $t->app->_random_string( 256 ),
+            'patronymic' => $t->app->_random_string( 24 ),
             upload => { file => $picture_path . 'all_right.svg' }
         },
         'result' => {
@@ -70,14 +76,15 @@ my $test_data = {
     },
     3 => {
         'data' => {
-            'name'      => 'name1',
-            'surname'     => 'surname3',
+            'name'      => $t->app->_random_string( 24 ),
+            'surname'     => $t->app->_random_string( 24 ),
             'status'    => 1,
-            'login'      => 'login3',
-            'email'     => 'email3',
-            'phone'    => 'phone3',
-            'password'    => 'password3',
-            'description' => 'description3',
+            'login'      => $t->app->_random_string( 16 ),
+            'email'     => $t->app->_random_string( 24 ),
+            'phone'    => '7(921)1111111',
+            'password'    => $t->app->_random_string( 32 ),
+            'description' => $t->app->_random_string( 256 ),
+            'patronymic' => $t->app->_random_string( 24 ),
             upload => { file => $picture_path . 'all_right.svg' }
         },
         'result' => {
@@ -88,33 +95,16 @@ my $test_data = {
     },
     4 => {
         'data' => {
-            'name'      => 'name1',
-            'surname'     => 'surname4',
+            'name'      => $t->app->_random_string( 24 ),
+            'surname'     => $t->app->_random_string( 24 ),
             'status'    => 1,
-            'login'      => 'login4',
-            'email'     => 'email4',
-            'phone'    => 'phone4',
-            'password'    => 'password4',
-            'description' => 'description4',
+            'login'      => $t->app->_random_string( 16 ),
+            'email'     => $t->app->_random_string( 24 ),
+            'phone'    => '7(921)1111111',
+            'password'    => $t->app->_random_string( 32 ),
+            'description' => $t->app->_random_string( 256 ),
+            'patronymic' => $t->app->_random_string( 24 ),
             upload => { file => $picture_path . 'all_right.svg' }
-        },
-        'result' => {
-            'message'    => "surname 'surname1' already exists",
-            'status'     => 'fail'
-        },
-        'comment' => 'Same surname:'
-    },
-    5 => {
-        'data' => {
-            'name'      => 'name5',
-            'surname'     => 'surname5',
-            'status'    => 1,
-            'login'      => 'login5',
-            'email'     => 'email5',
-            'phone'    => 'phone5',
-            'password'    => 'password5',
-            'description' => 'description5',
-            upload => { file => $picture_path . 'no_extension' }
         },
         'result' => {
             'message'    => "surname 'surname1' already exists",
@@ -136,65 +126,103 @@ foreach my $test (sort {$a <=> $b} keys %{$test_data}) {
         last;
     }
     $t->content_type_is('application/json;charset=UTF-8');
+    $t->json_is( $result );
 
     # проверка данных ответа
     $response = decode_json $t->{'tx'}->{'res'}->{'content'}->{'asset'}->{'content'};
-    # url проверяется отдельно, так как оно генерируется случайно
-    $url = $$response{'url'};
-    delete $response->{'url'};
-    ok( Compare( $result, $response ), "Response is correct" );
 
-    # дополнительные проверки работы положительных запросов
-    if ( $$result{'status'} eq 'ok' ) {
+    # # url проверяется отдельно, так как оно генерируется случайно
+    # $url = $$response{'url'};
+    # delete $response->{'url'};
+    # ok( Compare( $result, $response ), "Response is correct" );
 
-        # составление списка возможных расширений
-        $extension = '(';
-        foreach ( keys %{$settings->{'valid_extensions'}} ) {
-            $extension = $extension . $_ . '|';
-        }
-        $extension =~ s/\|$/)/;
+    # # дополнительные проверки работы положительных запросов
+    # if ( $$result{'status'} eq 'ok' ) {
 
-        # регулярное выражение для проверки url
-        $regular = '^' . $settings->{'site_url'} . $settings->{'upload_url_path'} . '([\w]{48}' . ').(' . $extension . ')$';
-        ok( $url =~ /$regular/, "Url is correct" );
+    #     # составление списка возможных расширений
+    #     $extension = '(';
+    #     foreach ( keys %{$settings->{'valid_extensions'}} ) {
+    #         $extension = $extension . $_ . '|';
+    #     }
+    #     $extension =~ s/\|$/)/;
 
-        # проверка размера загруженного файла
-        $file_path = $settings->{'upload_local_path'} . $1 . '.' . $2;
-        ok( -s $file_path == $size, "Download was successful");
+    #     # регулярное выражение для проверки url
+    #     $regular = '^' . $settings->{'site_url'} . $settings->{'upload_url_path'} . '([\w]{48}' . ').(' . $extension . ')$';
+    #     ok( $url =~ /$regular/, "Url is correct" );
 
-        # проверка содержимого файла описания
-        $desc_path = $settings->{'upload_local_path'} . $1 . '.' . $settings->{'desc_extension'};
-        $description = read_file( $desc_path, { binmode => ':utf8' } );
-        $description = decode_json $description;
+    #     # проверка размера загруженного файла
+    #     $file_path = $settings->{'upload_local_path'} . $1 . '.' . $2;
+    #     ok( -s $file_path == $size, "Download was successful");
 
-        ok( 
-            $$description{'description'} eq $$data{'description'} &&
-            $$description{'mime'} eq $$result{'mime'} &&
-            $$description{'filename'} eq $1 &&
-            $$description{'extension'} eq $2 &&
-            $$description{'title'} eq 'all_right.svg' &&
-            $$description{'size'} == $size,
-            "Description is correct"
-        );
+    #     # проверка содержимого файла описания
+    #     $desc_path = $settings->{'upload_local_path'} . $1 . '.' . $settings->{'desc_extension'};
+    #     $description = read_file( $desc_path, { binmode => ':utf8' } );
+    #     $description = decode_json $description;
 
-        # удаление загруженных файлов
-        $cmd = `rm $file_path $desc_path`;
-        ok( !$?, "Files were deleted");
-    }
+    #     ok( 
+    #         $$description{'description'} eq $$data{'description'} &&
+    #         $$description{'mime'} eq $$result{'mime'} &&
+    #         $$description{'filename'} eq $1 &&
+    #         $$description{'extension'} eq $2 &&
+    #         $$description{'title'} eq 'all_right.svg' &&
+    #         $$description{'size'} == $size,
+    #         "Description is correct"
+    #     );
+
+    #     # удаление загруженных файлов
+    #     $cmd = `rm $file_path $desc_path`;
+    #     ok( !$?, "Files were deleted");
+    # }
     diag "";
 };
-clear_db();
+# clear_db();
+
+$test_data = {
+    # положительные тесты
+    1 => {
+        'data' => {
+            'id'    => 2
+        },
+        'result' => {
+            'user'      => {
+                'id'        => 1,
+                'surname'     => 'test',
+                'name'      => 'test',
+                'status'    => 1
+            },
+            'data'      => {
+                'login'      => 'login',
+                'email'     => 'email',
+                'phone'    => '8(921)111111',
+                'password'    => 'password'
+            },
+            'status'    => 'ok'
+        },
+        'comment' => 'All right:'
+    },
+};
+
+foreach my $test (sort {$a <=> $b} keys %{$test_data}) {
+    diag ( $$test_data{$test}{'comment'} );
+    $data = $$test_data{$test}{'data'};
+    $result = $$test_data{$test}{'result'};
+    $t->post_ok($host.'/user/edit' => {token => $token} => form => $data )
+        ->status_is(200)
+        ->content_type_is('application/json;charset=UTF-8')
+        ->json_is( $result );
+    diag "";
+};
 
 done_testing();
 
 # очистка тестовой таблицы
-sub clear_db {
-    if ($t->app->config->{test}) {
-        $t->app->pg_dbh->do('ALTER SEQUENCE "public".users_id_seq RESTART');
-        $t->app->pg_dbh->do('TRUNCATE TABLE "public".users RESTART IDENTITY CASCADE');
-    }
-    else {
-        warn("Turn on 'test' option in config")
-    }
-}
+# sub clear_db {
+#     if ($t->app->config->{test}) {
+#         $t->app->pg_dbh->do('ALTER SEQUENCE "public".users_id_seq RESTART');
+#         $t->app->pg_dbh->do('TRUNCATE TABLE "public".users RESTART IDENTITY CASCADE');
+#     }
+#     else {
+#         warn("Turn on 'test' option in config")
+#     }
+# }
 

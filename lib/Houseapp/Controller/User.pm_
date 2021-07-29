@@ -44,8 +44,16 @@ sub add {
         # store real file name
         $$data{'title'} = $$data{'filename'};
 
-        # генерация имени файла
+        # генерация случайного имени
+<<<<<<< HEAD
+        my $name_length = $config->{'upload_name_length'};
+        $$data{'filename'} = $self->_random_string( $name_length );
+        while ( $self->_exists_in_directory( './upload/'.$$data{'filename'} ) ) {
+            $$data{'filename'} = $self->_random_string( $name_length );
+        }
+=======
         $$data{'filename'} = sha256_hex( $$data{'filename'}, $salt );
+>>>>>>> origin/test
 
         # присвоение пустого значения вместо null
         $$data{'description'} = '' unless ( $$data{'description'} );

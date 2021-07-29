@@ -1,0 +1,63 @@
+config_update => {
+    'debug' => 1,
+    'secrets' => [ 'GZcAvBgDBS1pfjVlO31GSif7cbDaI0ZYheaqErC96' ],
+
+    'host'                  => 'http://127.0.0.1:4444',
+    'url'                   => 'http://house',
+    'expires'               => '6000',
+    'upload_settings_path'  => '/home/troll/work/house/public/uploads',
+    'export_settings_path'  => '/home/troll/work/house/settings',
+    'log'                   => '/home/troll/work/house/log/mojo.log',
+
+    'databases' => {
+        # postgres Base (only for installation)
+        'pg_postgres' => {
+            'password'  => 'Yfenbkec_1',
+            'username'  => 'troll',
+            'options' => {
+                'pg_auto_escape'    => 1,
+                'pg_server_prepare' => 0,
+                'RaiseError'        => 1,
+                'AutoCommit'        => 1,
+                'PrintError'        => 1,
+                'pg_enable_utf8'    => 1
+            },
+            'dsn' => 'dbi:Pg:dbname=postgres;host=localhost;port=5432'
+        },
+        # test Base
+        'pg_main_test' => {
+            'password' => 'Yfenbkec_1',
+            'username' => 'troll',
+            'options' => {
+                'pg_auto_escape'    => 1,
+                'pg_server_prepare' => 0,
+                'RaiseError'        => 1,
+                'AutoCommit'        => 1,
+                'PrintError'        => 1,
+                'pg_enable_utf8'    => 1
+            },
+            'dsn' => 'dbi:Pg:dbname=house_test;host=localhost;port=5432'
+        },
+        # main Base
+        'pg_main' => {
+            'password' => 'Yfenbkec_1',
+            'username' => 'troll',
+            'options' => {
+                'pg_auto_escape'    => 1,
+                'pg_server_prepare' => 0,
+                'RaiseError'        => 1,
+                'AutoCommit'        => 1,
+                'PrintError'        => 1,
+                'pg_enable_utf8'    => 1
+            },
+            'dsn' => 'dbi:Pg:dbname=house;host=localhost;port=5432'
+        }
+    },
+
+    # пользователь по-умолчанию (only for installation)
+    'users' => {
+        'email'     => 'admin@admin',
+        'login'     => 'admin',
+        'password'  => 'admin'
+    }
+}

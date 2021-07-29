@@ -9,7 +9,7 @@ use Data::Dumper;
 sub index {
     my $self = shift;
 
-    my ( $data, $result, $filename, $resp, $url, $json, $local_path, $extension, $write_result, $name_length );
+    my ( $data, $result, $filename, $resp, $url, $json, $local_path, $extension, $write_result, $name_length, $salt );
     push @!, "Validation list not contain rules for this route: ".$self->url_for unless keys %{ $$vfields{ $self->url_for } };    
 
     # проверка данных
@@ -21,12 +21,11 @@ sub index {
         # store real file name
         $$data{'title'} = $$data{'filename'};
 
+        # получение соли из конфига
+        $salt = $self->{'app'}->{'config'}->{'secrets'}->[0];
+
         # генерация случайного имени
-        $name_length = $config->{'upload_name_length'};
-        $$data{'filename'} = $self->_random_string( $name_length );
-        while ( $self->_exists_in_directory( './upload/'.$$data{'filename'} ) ) {
-            $$data{'filename'} = $self->_random_string( $name_length );
-        }
+        $$data{'filename'} = sha256_hex( $$data{'filename'}, $salt );
 
         # путь файла
         $$data{'path'} = 'local';

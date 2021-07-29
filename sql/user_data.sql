@@ -6,10 +6,10 @@ CREATE SEQUENCE "public".data_id_seq;
 
 CREATE TABLE "public"."user_data" (
     "id" int4 DEFAULT nextval('data_id_seq'::regclass) NOT NULL,
-    "name" varchar(255) COLLATE "default" NOT NULL,
-    "surname" varchar(255) COLLATE "default" NOT NULL,
-    "patronymic" varchar(255) COLLATE "default" NOT NULL,
-    "phone" varchar(16) COLLATE "default" DEFAULT NULL::character varying,
+    "name" varchar(255) COLLATE "default",
+    "surname" varchar(255) COLLATE "default",
+    "patronymic" varchar(255) COLLATE "default",
+    "phone" varchar(16) COLLATE "default",
     CONSTRAINT "data_pkey" PRIMARY KEY ("id")
 )
 WITH (OIDS=FALSE);

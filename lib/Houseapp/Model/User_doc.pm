@@ -10,7 +10,7 @@ use DBI;
 use common;
 
 # вводит данные о новом файле в таблицу media
-# my $true = $self->model('Upload')->_insert_media( $data );
+# my $true = $self->model('User_doc')->_insert_media( $data );
 sub _insert_media {
     my ( $self, $data ) = @_;
 
@@ -21,24 +21,31 @@ sub _insert_media {
         push @!, "no data for insert";
     }
 
-##### потом добавить заполнение полей type, mime, order, flags ???????????????????????????????????????????????????????
     unless ( @! ) {
         # запись данных в базу
-        $sth = $self->{'app'}->pg_dbh->prepare( 'INSERT INTO "public"."media" ("path", "filename", "extension", "title", "size", "type", "mime", "description", "order", "flags") VALUES (:path, :filename, :extension, :title, :size, :type, :mime, :description, :order, :flags) RETURNING "id"' );
-        $sth->bind_param( ':path', $$data{'path'} );
-        $sth->bind_param( ':filename', $$data{'filename'} );
+        $sth = $self->{'app'}->pg_dbh->prepare( 'INSERT INTO "public"."user_doc" ("new_name", "old_name", "extension", "size",  "time_create", "description" ) VALUES (:new_name, :old_name, :extension, :size, :time_create, :description) RETURNING "id"' );
+        $sth->bind_param( ':new_name', $$data{'title'} );
+        $sth->bind_param( ':old_name', $$data{'filename'} );
         $sth->bind_param( ':extension', $$data{'extension'} );
-        $sth->bind_param( ':title', $$data{'title'} );
         $sth->bind_param( ':size', $$data{'size'} );
-        $sth->bind_param( ':type', '' );
-        $sth->bind_param( ':mime', $$data{'mime'} );
+        $sth->bind_param( ':time_create', $$data{'time_create'} );
         $sth->bind_param( ':description', $$data{'description'} );
-        $sth->bind_param( ':order', 0 );
-        $sth->bind_param( ':flags', 0 );
+
+        #         $sth->bind_param( ':path', $$data{'path'} );
+        # $sth->bind_param( ':filename', $$data{'filename'} );
+        # $sth->bind_param( ':extension', $$data{'extension'} );
+        # $sth->bind_param( ':title', $$data{'title'} );
+        # $sth->bind_param( ':size', $$data{'size'} );
+        # $sth->bind_param( ':type', '' );
+        # $sth->bind_param( ':mime', $$data{'mime'} );
+        # $sth->bind_param( ':description', $$data{'description'} );
+        # $sth->bind_param( ':order', 0 );
+        # $sth->bind_param( ':flags', 0 );
+        
         $sth->execute();
         $sth->finish();
 
-        $result = $sth->last_insert_id( undef, 'public', 'user_doc', undef, { sequence => 'media_id_seq' } );
+        $result = $sth->last_insert_id( undef, 'public', 'user_doc', undef, { sequence => 'doc_id_seq' } );
         $sth->finish();
         push @!, "Can not insert $$data{'title'}" unless $result;
     }
@@ -58,7 +65,7 @@ sub _insert_media {
 }
 
 # возвращает имя и расширение файла
-# ( $fileinfo, $error ) = $self->model('Upload')->_check_media( $id );
+# ( $fileinfo, $error ) = $self->model('user_doc')->_check_media( $id );
 sub _check_media {
     my ( $self, $id ) = @_;
 
@@ -71,7 +78,7 @@ sub _check_media {
 
     # поиск имени и расширения файла по id
     unless ( @! ) {
-        $sql = 'SELECT "filename", "extension" FROM "public"."media" WHERE "id" = :id';
+        $sql = 'SELECT "filename", "extension" FROM "public"."user_doc" WHERE "id" = :id';
         $sth = $self->{app}->pg_dbh->prepare( $sql );
         $sth->bind_param( ':id', $id );
         $sth->execute();
@@ -84,7 +91,7 @@ sub _check_media {
 }
 
 # удаляет файл и запись о нём
-# ( $fileinfo, $error ) = $self->model('Upload')->_delete_media( $id );
+# ( $fileinfo, $error ) = $self->model('user_doc')->_delete_media( $id );
 sub _delete_media {
     my ( $self, $id ) = @_;
 
@@ -97,7 +104,7 @@ sub _delete_media {
 
     # удаление записи о файле
     unless ( @! ) {
-        $sql = 'DELETE FROM "public"."media" WHERE "id" = :id';
+        $sql = 'DELETE FROM "public"."user_doc" WHERE "id" = :id';
         $sth = $self->{'app'}->pg_dbh->prepare( $sql );
         $sth->bind_param( ':id', $id );
         $result = $sth->execute();
@@ -163,7 +170,7 @@ sub _update_media {
     }
     else {
         # обновление описания в бд
-        $sth = $self->{app}->pg_dbh->prepare( 'UPDATE "public"."media" SET "description" = :description WHERE "id" = :id RETURNING "id"' );
+        $sth = $self->{app}->pg_dbh->prepare( 'UPDATE "public"."user_doc" SET "description" = :description WHERE "id" = :id RETURNING "id"' );
         $sth->bind_param( ':description', $$data{'description'} );
         $sth->bind_param( ':id', $$data{'id'} );
         $result = $sth->execute();

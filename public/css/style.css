@@ -1,25 +1,145 @@
-.parent {
-    width: 100%;
+html, body {
     height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
+    padding: 0px;
+    margin: 0px;
+    overflow: hidden;
+}
+
+input {
+//    width: 300px;
+    font-size: 13px;
+    padding: 6px 0 4px 10px;
+    border: 1px solid #cecece;
+    background: #F6F6f6;
+    border-radius: 1px;
+}
+button {
+//    width: 300px;
+    font-size: 13px;
+    padding: 4px 10px 4px 10px;
+    border: 1px solid #cecece;
+//    background: #F6F6f6;
+    border-radius: 1px;
+}
+textarea {
+    /* = Убираем скролл */
     overflow: auto;
-    /*padding: 25%;*/
+
+    /* = Убираем увеличение */
+    resize: none;
+    width: 300px;
+    height: 50px;
+
+    /* = Добавим фон, рамку, отступ*/
+    background: #f6f6f6;
+    border: 1px solid #cecece;
+    border-radius: 1px 0 0 0;
+    padding: 8px 0 8px 10px;
+}
+/* = стилизуем текст */
+label {
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
 }
 
-.block {
-    width: 350px;
-    height: 200px;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    margin: -125px 0 0 -125px;
+
+
+/* таблица с сортировкой */
+.table_sort {
+    width: 100%;
+}
+.table_sort table {
+    border-collapse: collapse;
 }
 
-th, td {
-    border: 1px solid;
+.table_sort th {
+    /*color: #ffebcd;*/
+    background: #eaeaea;
+    cursor: pointer;
 }
-th {
-    font-weight : bold
+
+.table_sort td,
+.table_sort th {
+    /*width: 150px;*/
+    min-width: 40px;
+    height: 30px;
+    text-align: center;
+    border: 0px solid ;
+    pointer: hand;
+}
+
+.table_sort tbody tr:nth-child(even) {
+    background: #f5f5f5;
+}
+
+th.sorted[data-order="1"],
+th.sorted[data-order="-1"] {
+    position: relative;
+}
+
+th.sorted[data-order="1"]::after,
+th.sorted[data-order="-1"]::after {
+    right: 2px;
+    position: relative;
+    padding-right: 5px;
+    float: right;
+}
+
+th.sorted[data-order="-1"]::after {
+    content: "▼"
+}
+
+th.sorted[data-order="1"]::after {
+    content: "▲"
+}
+
+/* разметка */
+#header {
+    width:100%;
+    height:15%;
+    min-height: 15%;
+    padding: 1px;
+    margin: 1px;
+}
+#menu {
+    width:15%;
+    height:80%;
+    float: left;
+}
+#content {
+    /*width:60%;*/
+    height:80%;
+    float: left;
+}
+#right-block {
+    /*width:25%;*/
+    height:80%;
+    float: left;
+}
+#footer {
+    width:100%;
+    height:5%;
+}
+
+/* команды в таблице */
+.command {
+    padding: 0 3px 0 3px;
+    cursor: pointer;
+}
+.command:hover {
+    text-decoration: underline;
+}
+
+.w0 {
+    width:0;
+}
+.w25 {
+    width:25%;
+}
+.w60 {
+    width:60%;
+}
+.w85 {
+    width:85%;
 }

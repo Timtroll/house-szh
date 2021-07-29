@@ -16,6 +16,9 @@ my $host = $t->app->config->{'host'};
 
 clear_db();
 
+# путь к директории с файлами
+my $picture_path = './t/User/files/';
+
 # получение токена для аутентификации
 $t->post_ok( $host.'/auth/login' => form => { 'login' => 'admin', 'password' => 'admin' } );
 unless ( $t->status_is(200)->{tx}->{res}->{code} == 200  ) {
