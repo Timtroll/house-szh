@@ -200,11 +200,7 @@ sub deactivate {
 sub delete {
     my $self = shift;
 
-<<<<<<< HEAD
-    my ( $delete, $resp, $data, $fileinfo, $filename, $local_path, $full_path );
-=======
     my ( $delete, $resp, $data, $fileinfo, $filename, $local_path, $full_path, $cmd );
->>>>>>> origin/test
 
     # проверка данных
     $data = $self->_check_fields();

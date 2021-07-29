@@ -258,7 +258,7 @@ sub generate_secret {
 };
 
 sub reset_test_db {
-    my $res = `./script/install.pl mode=test start=test rebuild=1 path=../temp_freee.conf > ./log/start.log`;
+    my $res = `./script/install.pl mode=test start=test rebuild=1 path=../temp_house.conf > ./log/start.log`;
 }
 
 1;

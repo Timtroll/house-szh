@@ -12,8 +12,8 @@ config_update => {
     'databases' => {
         # postgres Base (only for installation)
         'pg_postgres' => {
-            'password'  => 'Yfenbkec_1',
-            'username'  => 'troll',
+            'password'  => 'yfenbkec',
+            'username'  => 'postgres',
             'options' => {
                 'pg_auto_escape'    => 1,
                 'pg_server_prepare' => 0,

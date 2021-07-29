@@ -6,7 +6,7 @@
 # для миграции тестовой базы данных добавить при вызове параметр test
 # ./script/install.pl
 # обязательные опции:
-# --path=../temp_freee.conf
+# --path=../temp_house.conf
 # --rebuild=1/0 - создание базы и конфигурации (1) или только конфигурации (0)
 # --mode=house/test - создание баз данных.
 #                                     house - только база данных house
@@ -81,7 +81,7 @@ warn 'All setting required';
 
 exit;
 
-# ./script/install.pl mode=all start=test rebuild=1 path=../temp_freee.conf
+# ./script/install.pl mode=all start=test rebuild=1 path=../temp_house.conf
 # --rebuild=1   - создание базы и конфигурации (1)
 # --mode=all    - создание баз данных. all - все пересоздаются
 # --start=test  - по окончании работы скрипта, старт mojo с базой test
@@ -140,13 +140,12 @@ sub helpme {
     my $mess_key = shift;
 
     my %messages = (
-        'need_mode'  => "mode must be set as 'all'/'test'/'house' value",
-        'need_mode'  => "mode must be set as 'all'/'test'/'house' value",
-        'need_config' => q~Default config file not exists or wrong file format.
+        'need_mode'     => "mode must be set as 'all'/'test'/'house' value",
+        'need_config'   => q~Default config file not exists or wrong file format.
 
 Default data config must be like this:
 
-package temp_freee;
+package temp_house;
 
 use Exporter;
 our @ISA = 'Exporter';
@@ -174,7 +173,7 @@ our $config_update = {
 ~,
         'help' => q~
 You can use these options:
-    --path='./temp_freee.conf   - path to default data
+    --path='./temp_house.conf   - path to default data
     --mode=test                 - create test DB if need
     --rebuild=1/0               - create DB and config if '1', else create configuration only
     --start=test                - start mojo with test DB if need (default - starting with man DB)
