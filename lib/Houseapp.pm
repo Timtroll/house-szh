@@ -54,32 +54,18 @@ warn "+++++++++++";
     # Router
     $r = $self->routes;
 
-    $r->post('/auth/login')               ->to('auth#login');
-    $r->any('/auth/logout')               ->to('auth#logout');
+    $r->post('/login')               ->to('auth#login');
+    $r->any('/logout')               ->to('auth#logout');
 
     $auth = $r->under()->to('auth#check_token');
 
-    $auth->post('/user/index')        ->to('user#index');
-    $auth->post('/user/add')          ->to('user#add');
-    $auth->post('/user/edit')         ->to('user#edit');
-    $auth->post('/user/save')         ->to('user#save');
-    $auth->post('/user/delete')       ->to('user#delete');
-    $auth->post('/user/activate')     ->to('user#activate');
-    $auth->post('/user/deactivate')   ->to('user#deactivate');
-
-    $auth->post('/user_data/index')        ->to('user_data#index');
-    $auth->post('/user_data/add')          ->to('user_data#add');
-    $auth->post('/user_data/edit')         ->to('user_data#edit');
-    $auth->post('/user_data/save')         ->to('user_data#save');
-    $auth->post('/user_data/delete')       ->to('user_data#delete');
-    $auth->post('/user_data/activate')     ->to('user_data#activate');
-    $auth->post('/user_data/deactivate')   ->to('user_data#deactivate');
-
-    $auth->post('/user_doc/index')          ->to('user_doc#index');
-    $auth->post('/user_doc/delete')         ->to('user_doc#delete');
-    $auth->post('/user_doc/search')         ->to('user_doc#search');
-    $auth->post('/user_doc/update')         ->to('user_doc#update');
-
+    $r->post('/user/index')        ->to('user#index');
+    $r->post('/user/add')          ->to('user#add');
+    $r->get('/user/edit')          ->to('user#edit');
+    $r->post('/user/save')         ->to('user#save');
+    $r->get('/user/delete')        ->to('user#delete');
+    $r->get('/user/activate')      ->to('user#activate');
+    $r->get('/user/deactivate')    ->to('user#deactivate');
 
     # роут на который происходит редирект, для вывода ошибок
     $r->any('/*')->to('index#error');

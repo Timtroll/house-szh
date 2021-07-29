@@ -18,7 +18,7 @@ $host = $t->app->config->{'host'};
 
 # clear_db();
 
-# путь к директории с файлами
+# путь к директории с файлами 
 $picture_path = './t/User/files/';
 
 # получение токена для аутентификации
@@ -126,7 +126,6 @@ foreach my $test (sort {$a <=> $b} keys %{$test_data}) {
         last;
     }
     $t->content_type_is('application/json;charset=UTF-8');
-    # $t->json_is( $result, Dumper $result );
     $t->json_is( $result );
 
     # проверка данных ответа

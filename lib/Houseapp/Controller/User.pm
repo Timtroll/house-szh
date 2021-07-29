@@ -27,7 +27,13 @@ sub add {
     }
 
     unless ( @! ) {
-        $id = $self->model('User_data')->_insert_data( $data );
+        if ( $$data{'name'} || $$data{'surname'} || $$data{'patronymic'} || $$data{'phone'} ) {
+            $$data{'name'}       = '' unless $$data{'name'};
+            $$data{'surname'}    = '' unless $$data{'surname'};
+            $$data{'patronymic'} = '' unless $$data{'patronymic'};
+            $$data{'phone'}      = '' unless $$data{'phone'};
+            $id = $self->model('User_data')->_insert_data( $data );
+        }
     }
 
     unless ( @! ) {
