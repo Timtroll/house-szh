@@ -109,20 +109,48 @@ sub _update_data {
 sub _delete {
     my ( $self, $data ) = @_;
 
-    my ( $sql, $sth, $result );
+    my ( $sql, $sth, $result, $data_id );
 
     push @!, 'no id' unless $$data{'id'};
 
     unless( @! ) {
-        # удаление записи из таблицы groups
-        $sql = 'DELETE FROM "public"."user_data" WHERE "id" = :id';
+        # получение id из таблицы user_links
+        $sql = 'SELECT second_id FROM "public"."user_links" WHERE "first_id" = :id and "second_type" = :data';
 
         $sth = $self->{app}->pg_dbh->prepare( $sql );
         $sth->bind_param( ':id', $$data{'id'} );
-        $result = $sth->execute();
+        $sth->bind_param( ':data', 'user_data' );
+        $sth->execute();
+        $result = $sth->fetchrow_hashref();
         $sth->finish();
+        $data_id = $$result{'second_id'};
+    }
 
-        push @!, "Could not delete user_data '$$data{'id'}'" if $result eq '0E0';
+    if ( $data_id ) {
+        unless( @! ) {
+            # удаление записи из таблицы user_data
+            $sql = 'DELETE FROM "public"."user_data" WHERE "id" = :id';
+
+            $sth = $self->{app}->pg_dbh->prepare( $sql );
+            $sth->bind_param( ':id', $data_id );
+            $result = $sth->execute();
+            $sth->finish();
+
+            push @!, "Could not delete user_data '$$data{'id'}'" if $result eq '0E0';
+        }
+
+        unless( @! ) {
+            # удаление записи из таблицы user_links
+            $sql = 'DELETE FROM "public"."user_links" WHERE "first_id" = :id and "second_type" = :data';
+
+            $sth = $self->{app}->pg_dbh->prepare( $sql );
+            $sth->bind_param( ':id', $$data{'id'} );
+            $sth->bind_param( ':data', 'user_data' );
+            $result = $sth->execute();
+            $sth->finish();
+
+            push @!, "Could not delete user_links '$$data{'id'}'" if $result eq '0E0';
+        }
     }
 
     return $result;
