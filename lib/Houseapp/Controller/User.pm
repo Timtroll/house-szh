@@ -55,9 +55,6 @@ sub add {
             # получение точного времени
             $$data{'time_create'} = $self->model('Utils')->_sec2date( time() );
 
-            # получение mime
-            $$data{'mime'} = $config->{'valid_extensions'}->{$$data{'extension'}} || '';
-
             # запись файла
             my $res = write_file(
                 $config->{'upload_local_path'} . $$data{'filename'} . '.' . $$data{'extension'},
@@ -196,7 +193,7 @@ sub deactivate {
 sub delete {
     my $self = shift;
 
-    my ( $delete, $resp, $data, $fileinfo, $filename, $local_path, $full_path, $cmd, $doc_id );
+    my ( $delete, $resp, $data, $fileinfo, $filename, $local_path, $full_path, $cmd, $data_id, $doc_id );
 
     # проверка данных
     $data = $self->_check_fields();
@@ -213,8 +210,11 @@ sub delete {
             push @!, "Could not delete User '$$data{'id'}'" unless $delete;
         }
         unless ( @! ) {
-            $delete = $self->model('User_data')->_delete( $data );
-            push @!, "Could not delete Data '$$data{'id'}'" unless $delete;
+            $data_id = $self->model('User_data')->_get_id( $$data{'id'} );
+            if ( $data_id ) {
+                $delete = $self->model('User_data')->_delete( $data_id );
+                push @!, "Could not delete Data '$$data{'id'}'" unless $delete;
+            }
         }
 
         unless ( @! ) {
@@ -266,7 +266,7 @@ sub delete {
 sub edit {
     my $self = shift;
 
-    my ( $result_user, $result_data, $data, $resp );
+    my ( $result_user, $data_id, $result_data, $data, $doc_id, $result_doc, $result, $resp );
 
     # проверка данных
     $data = $self->_check_fields();
@@ -278,16 +278,48 @@ sub edit {
     }
 
     unless ( @! ) {
-        $result_user = $self->model('User')->_get_user( $data );
+        $result_user = $self->model('User')->_get_user( $$data{'id'} );
     }
     unless ( @! ) {
-        $result_data = $self->model('User_data')->_get_user( $data );
+        $data_id = $self->model('User_data')->_get_id( $$data{'id'} );
+        if ( $data_id ) {
+            $result_data = $self->model('User_data')->_get_data( $data_id );
+        }
+    }
+    unless ( @! ) {
+        $doc_id = $self->model('User_doc')->_get_id( $$data{'id'} );
+        if ( $doc_id ) {
+            $result_doc = $self->model('User_doc')->_get_media( $doc_id );
+        }
+    }
+
+    unless ( @! ) {
+        $$result{'id'}     = $$result_user{'id'};
+        $$result{'login'}  = $$result_user{'login'};
+        $$result{'email'}  = $$result_user{'email'};
+        $$result{'status'} = $$result_user{'status'};
+
+        if ( $result_data ) {
+            $$result{'surname'}    = $$result_data{'surname'} if $$result_data{'surname'};
+            $$result{'name'}       = $$result_data{'name'} if $$result_data{'name'};
+            $$result{'patronymic'} = $$result_data{'patronymic'} if $$result_data{'patronymic'};
+            $$result{'phone'}      = $$result_data{'phone'} if $$result_data{'phone'};
+        }
+
+        if ( $result_doc ) {
+            $$result{'extension'}     = $$result_doc{$doc_id}{'extension'};
+            $$result{'filename'}      = $$result_doc{$doc_id}{'new_name'};
+            $$result{'size'}          = $$result_doc{$doc_id}{'size'};
+            $$result{'real_filename'} = $$result_doc{$doc_id}{'old_name'};
+
+            $$result{'url'} = $config->{'site_url'} . $config->{'upload_url_path'} . $$result{'filename'};
+            $$result{'mime'} = $config->{'valid_extensions'}->{$$data{'extension'}};
+        }
     }
 
     $resp->{'message'} = join("\n", @!) if @!;
     $resp->{'status'} = @! ? 'fail' : 'ok';
-    $resp->{'user'} = $result_user unless @!;
-    $resp->{'data'} = $result_data unless @!;
+    $resp->{'data'} = $result unless @!;
 
     @! = ();
 
@@ -297,7 +329,7 @@ sub edit {
 sub save {
     my ( $self ) = shift;
 
-    my ( $id, $parent, $data, $resp );
+    my ( $id, $result, $data, $salt, $resp );
 
 
     # проверка данных
@@ -305,19 +337,53 @@ sub save {
 
     # проверка существования обновляемой строки
     unless ( @! ) {
-        unless ( $self->model('Utils')->_exists_in_table('groups', 'id', $$data{'id'}) ) {
+        unless ( $self->model('Utils')->_exists_in_table('users', 'id', $$data{'id'}) ) {
             push @!, "User with id '$$data{'id'}' does not exist";
         }
     }
 
+    # проверка паролей
     unless ( @! ) {
+        if ( $$data{'password'} && !$$data{'newpassword'} ) {
+            push @!, 'Empty newpassword';
+        }
+        elsif ( !$$data{'password'} && $$data{'newpassword'} ) {
+            push @!, 'Empty password';
+        }
+        elsif ( $$data{'password'} && $$data{'password'} eq $$data{'newpassword'} ) {
+            push @!, 'Password and newpassword are the same';
+        }
+    }
+
+    unless ( @! ) {
+        # проверяем, используется ли логин другим пользователем
+        if ( $$data{'login'} && $self->model('Utils')->_exists_in_table('users', 'login', $$data{'login'}, $$data{'id'} ) ) {
+            push @!, "login '$$data{ login }' already used"; 
+        }
+        # проверяем, используется ли емэйл другим пользователем
+        elsif ( $$data{'email'} && $self->model('Utils')->_exists_in_table('users', 'email', $$data{'email'}, $$data{'id'} ) ) {
+            push @!, "email '$$data{ email }' already used"; 
+        }
+    }
+
+    unless ( @! ) {
+        if ( $$data{'password'} ) {
+            # получение соли из конфига
+            $salt = $self->{'app'}->{'config'}->{'secrets'}->[0];
+
+            # преобразование пароля
+            $$data{'password'} = sha256_hex( $$data{'newpassword'}, $salt );
+        }
+
         $id = $self->model('User')->_update_users( $data );
     }
     unless ( @! ) {
-        $id = $self->model('User_data')->_update_data( $data );
+        if ( $$data{'name'} || $$data{'surname'} || $$data{'patronymic'} || $$data{'phone'} ) {
+            $result = $self->model('User_data')->_update_data( $data );
+        }
     }
     unless ( @! ) {
-        $id = $self->model('User_doc')->_update_media( $data );
+        $result = $self->model('User_doc')->_update_media( $data );
     }
 
     $resp->{'message'} = join("\n", @!) if @!;

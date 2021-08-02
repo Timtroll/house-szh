@@ -24,8 +24,8 @@ sub _insert_media {
     unless ( @! ) {
         # запись данных в базу
         $sth = $self->{'app'}->pg_dbh->prepare( 'INSERT INTO "public"."user_doc" ("new_name", "old_name", "extension", "size",  "time_create", "description" ) VALUES (:new_name, :old_name, :extension, :size, :time_create, :description) RETURNING "id"' );
-        $sth->bind_param( ':new_name', $$data{'title'} );
-        $sth->bind_param( ':old_name', $$data{'filename'} );
+        $sth->bind_param( ':new_name', $$data{'filename'} );
+        $sth->bind_param( ':old_name', $$data{'title'} );
         $sth->bind_param( ':extension', $$data{'extension'} );
         $sth->bind_param( ':size', $$data{'size'} );
         $sth->bind_param( ':time_create', $$data{'time_create'} );
@@ -120,36 +120,21 @@ sub _delete_media {
 # выводит данные о файле
 # ( $data, $error ) = $self->model('Upload')->_get_media( $data );
 sub _get_media {
-    my ( $self, $data ) = @_;
+    my ( $self, $id ) = @_;
 
     my ( $sth, $result, $sql, $count, @bind );
 
     # проверка входных данных
-    unless ( $$data{'search'} ) {
+    unless ( $id ) {
         push @!, "no data for search";
     }
 
     # запрос данных
     unless ( @! ) {
-        if ( $$data{'search'} =~ qr/^\d+$/os ) {
-            $sql = 'SELECT "id", "filename", "title", "size", "mime", "description", "extension" FROM "public"."media" WHERE "id" = ?';
-            @bind = ( $$data{'search'} );
-        }
-        elsif ( $$data{'search'} =~ qr/^[\da-zA-Z]+$/os && length( $$data{'search'} ) == 48 ) {
-            $sql = 'SELECT "id", "filename", "title", "size", "mime", "description", "extension" FROM "public"."media" WHERE "filename" = ?';
-            @bind = ( $$data{'search'} );
-        }
-        else {
-            $sql = 'SELECT "id", "filename", "title", "size", "mime", "description", "extension" FROM "public"."media" WHERE "title" LIKE ? OR "description" LIKE ?';
-            @bind = ( '%' . $$data{'search'} . '%', '%' . $$data{'search'} . '%');
-        }
+        $sql = 'SELECT "id", "new_name", "old_name", "size", "extension" FROM "public"."user_doc" WHERE "id" = :id';
 
         $sth = $self->{app}->pg_dbh->prepare( $sql );
-        $count = 1;
-        foreach my $bind ( @bind ) {
-            $sth->bind_param( $count, $bind );
-            $count++;
-        }
+        $sth->bind_param( ':id', $id );
         $sth->execute();
         $result = $sth->fetchall_hashref('id');
         $sth->finish();
