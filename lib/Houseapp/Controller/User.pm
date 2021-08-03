@@ -329,7 +329,7 @@ sub edit {
 sub save {
     my ( $self ) = shift;
 
-    my ( $id, $result, $data, $salt, $resp );
+    my ( $id, $result, $json, $local_path, $extension, $write_result, $name_length, $data, $salt, $resp );
 
 
     # проверка данных
@@ -378,12 +378,79 @@ sub save {
         $id = $self->model('User')->_update_users( $data );
     }
     unless ( @! ) {
+        # проверка существования данных для ввода в user_data
         if ( $$data{'name'} || $$data{'surname'} || $$data{'patronymic'} || $$data{'phone'} ) {
-            $result = $self->model('User_data')->_update_data( $data );
+            # получение id в таблице user_data
+            $$data{'id'} = $self->model('User_data')->_get_id( $id );
+            # если id существует, обновление записи
+            if ( $$data{'id'} ) {
+                $result = $self->model('User_data')->_update_data( $data );
+            }
+            # если id нету, создание новой записи
+            else {
+                $$data{'id'} = $id;
+                $result = $self->model('User_data')->_insert_data( $data );
+            }
         }
     }
     unless ( @! ) {
-        $result = $self->model('User_doc')->_update_media( $data );
+        if ( $$data{'content'} ) {
+            # получение id в таблице user_doc
+            $$data{'id'} = $self->model('User_doc')->_get_id( $id );
+            # если id существует, обновление записи
+            if ( $$data{'id'} ) {
+                # генерация имени файла
+                $$data{'new_name'} = sha256_hex( $$data{'filename'}, $salt );
+                # обновление записи
+                $result = $self->model('User_doc')->_update_media( $data );
+            }
+            # если id нету, создание нового файла и ввод записи
+            else {
+                # store real file name
+                $$data{'title'} = $$data{'filename'};
+
+                # генерация имени файла
+                $$data{'filename'} = sha256_hex( $$data{'filename'}, $salt );
+
+                # присвоение пустого значения вместо null
+                $$data{'description'} = '' unless ( $$data{'description'} );
+
+                # получение точного времени
+                $$data{'time_create'} = $self->model('Utils')->_sec2date( time() );
+
+                # запись файла
+                my $res = write_file(
+                    $config->{'upload_local_path'} . $$data{'filename'} . '.' . $$data{'extension'},
+                    { binmode => ':utf8' },
+                    $$data{'content'}
+                );
+                push @!, "Can not store '$$data{'filename'}' file" unless $res;
+
+                # ввод данных в таблицу
+                unless ( @! ) {
+                    $result = $self->model('User_doc')->_insert_media( $data );
+                }
+
+                # преобразование данных в json
+                unless ( @! ) {
+                    # delete $$data{'content'};
+                    $json = encode_json ( $data );
+                    push @!, "Can not convert into json $$data{'title'}" unless $json;
+                }
+
+                # создание файла с описанием
+                unless ( @! ) {
+                    my $local_path = $config->{'upload_local_path'};
+                    my $extension = $config->{'desc_extension'};
+                    my $write_result = write_file(
+                        $local_path . $$data{'filename'} . '.' . $extension,
+                        { binmode => ':utf8' },
+                        $json
+                    );
+                    push @!, "Can not write desc of $$data{'title'}" unless $write_result;
+                }
+            }
+        }
     }
 
     $resp->{'message'} = join("\n", @!) if @!;

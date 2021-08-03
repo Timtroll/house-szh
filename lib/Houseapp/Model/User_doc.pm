@@ -157,26 +157,17 @@ sub _update_media {
     }
     else {
         # обновление описания в бд
-        $sth = $self->{app}->pg_dbh->prepare( 'UPDATE "public"."user_doc" SET "description" = :description WHERE "id" = :id RETURNING "id"' );
+        $sth = $self->{app}->pg_dbh->prepare( 'UPDATE "public"."user_doc" SET "new_name" = :new_name, "old_name" = :old_name, "extension" = :extension, "size" = :size, "description" = :description WHERE "id" = :id RETURNING "id"' );
+        $sth->bind_param( ':new_name', $$data{'new_name'} );
+        $sth->bind_param( ':old_name', $$data{'filename'} );
+        $sth->bind_param( ':extension', $$data{'extension'} );
+        $sth->bind_param( ':size', $$data{'size'} );
         $sth->bind_param( ':description', $$data{'description'} );
         $sth->bind_param( ':id', $$data{'id'} );
-        $result = $sth->execute();
+        $result = $sth->fetchrow_array();
         $sth->finish();
         push @!, "Can not update media" unless $result;
     }
-
-    # получение данных о файле
-    unless ( @! ) {
-        $sql = 'SELECT "id", "filename", "title", "size", "mime", "description", "extension" FROM "public"."media" WHERE "id" = :id';
-        $sth = $self->{app}->pg_dbh->prepare( $sql );
-        $sth->bind_param( ':id', $$data{'id'} );
-        $sth->execute();
-        $data = $sth->fetchrow_hashref();
-        $sth->finish();
-        push @!, "Can not get file info" unless ( $data );
-    }
-
-    return $data;
 }
 
 sub _get_id {

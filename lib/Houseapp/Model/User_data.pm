@@ -96,8 +96,13 @@ sub _update_data {
     }
 
     unless ( @! ) {
-        $sql = 'UPDATE "public"."user_data" SET '.join( ', ', map { "\"$_\"=".$self->{'app'}->pg_dbh->quote( $$data{$_} ) } keys %$data ) . " WHERE \"id\"=" . $$data{'id'} . "returning id";
+        $sql = 'UPDATE "public"."user_data" SET "name" = :name, "surname" = :surname, "patronymic" = :patronymic, "phone" = :phone WHERE "id" = :id returning id';
         $sth = $self->{'app'}->pg_dbh->prepare( $sql );
+        $sth->bind_param( ':name', $$data{'name'} );
+        $sth->bind_param( ':surname', $$data{'surname'} );
+        $sth->bind_param( ':patronymic', $$data{'patronymic'} );
+        $sth->bind_param( ':phone', $$data{'phone'} );
+        $sth->bind_param( ':id', $$data{'id'} );
         $sth->execute();
         $result = $sth->fetchrow_array();
         $sth->finish();
