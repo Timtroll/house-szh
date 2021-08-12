@@ -47,7 +47,7 @@ sub add {
             $$data{'title'} = $$data{'filename'};
 
             # генерация имени файла
-            $$data{'filename'} = sha256_hex( $$data{'filename'}, $salt );
+            $$data{'filename'} = sha256_hex( $$data{'filename'}, $self->_random_string( 40 ) );
 
             # присвоение пустого значения вместо null
             $$data{'description'} = '' unless ( $$data{'description'} );
@@ -57,7 +57,7 @@ sub add {
 
             # запись файла
             my $res = write_file(
-                $config->{'upload_local_path'} . $$data{'filename'} . '.' . $$data{'extension'},
+                $config->{'upload_local_path'} . '/' . $$data{'filename'} . '.' . $$data{'extension'},
                 { binmode => ':utf8' },
                 $$data{'content'}
             );
@@ -77,7 +77,7 @@ sub add {
 
             # создание файла с описанием
             unless ( @! ) {
-                my $local_path = $config->{'upload_local_path'};
+                my $local_path = $config->{'upload_local_path'} . '/';
                 my $extension = $config->{'desc_extension'};
                 my $write_result = write_file(
                     $local_path . $$data{'filename'} . '.' . $extension,
@@ -108,22 +108,18 @@ sub index {
 
     unless ( @! ) {
         $$data{'page'} = 1 unless $$data{'page'};
-        $$data{'limit'}  = $config->{'per_page'};
+        $$data{'limit'}  = $$data{'per_page'};
         $$data{'offset'} = ( $$data{'page'} - 1 ) * $$data{'limit'};
+        $$data{'sort'} = 'ASC' unless $$data{'sort'};
+        $$data{'sort_field'} = 'id' unless $$data{'sort_field'};
 
         # получаем список пользователей
         $users = $self->model('User')->_get_list( $data );
     }
 
-    unless ( @! ) {
-        # получаем список данных о пользователях
-        $user_data = $self->model('User_data')->_get_list( $data );
-    }
-
     $resp->{'message'} = join("\n", @!) if @!;
     $resp->{'status'} = @! ? 'fail' : 'ok';
     $resp->{'users'} = $users unless @!;
-    $resp->{'data'} = $user_data unless @!;
 
     @! = ();
 
@@ -227,7 +223,7 @@ sub delete {
             # удаление файла
             unless ( @! ) {
                 $filename = $$fileinfo{'new_name'} . '.' . $$fileinfo{'extension'};
-                $local_path = $config->{'upload_local_path'};
+                $local_path = $config->{'upload_local_path'} . '/';
                 $full_path = $local_path . $filename;
                 if ( $self->_exists_in_directory( $full_path ) ) {
                     my $cmd = `rm $full_path`;
@@ -312,7 +308,7 @@ sub edit {
             $$result{'size'}          = $$result_doc{$doc_id}{'size'};
             $$result{'real_filename'} = $$result_doc{$doc_id}{'old_name'};
 
-            $$result{'url'} = $config->{'site_url'} . $config->{'upload_url_path'} . $$result{'filename'};
+            $$result{'url'} = $config->{'url'} . $config->{'upload_local_path'} . '/' . $$result{'filename'} . '.' . $$result{'extension'};
             $$result{'mime'} = $config->{'valid_extensions'}->{$$data{'extension'}};
         }
     }
@@ -329,7 +325,7 @@ sub edit {
 sub save {
     my ( $self ) = shift;
 
-    my ( $id, $result, $json, $local_path, $extension, $write_result, $name_length, $data, $salt, $resp );
+    my ( $id, $result, $json, $local_path, $extension, $write_result, $name_length, $data, $salt, $resp, $fileinfo, $doc_id, $filename, $full_path );
 
 
     # проверка данных
@@ -372,9 +368,16 @@ sub save {
             $salt = $self->{'app'}->{'config'}->{'secrets'}->[0];
 
             # преобразование пароля
-            $$data{'password'} = sha256_hex( $$data{'newpassword'}, $salt );
-        }
+            $$data{'password'} = sha256_hex( $$data{'password'}, $salt );
 
+            unless ( $self->model('User')->_get_password( $$data{'id'} ) eq $$data{'password'} ) {
+                push @!, "wrong password";
+            }
+            $$data{'password'} = sha256_hex( $$data{'newpassword'}, $salt );
+
+        } 
+    }
+    unless ( @! ) {
         $id = $self->model('User')->_update_users( $data );
     }
     unless ( @! ) {
@@ -403,10 +406,34 @@ sub save {
                 $$data{'new_name'} = sha256_hex( $$data{'filename'}, $salt );
                 # обновление записи
                 $result = $self->model('User_doc')->_update_media( $data );
-            }
-            # если id нету, создание нового файла и ввод записи
-            else {
-                # store real file name
+
+                unless ( @! ) {
+                    $fileinfo = $self->model('User_doc')->_check_media( $doc_id );
+                }
+                # удаление файла
+                unless ( @! ) {
+                    $filename = $$fileinfo{'new_name'} . '.' . $$fileinfo{'extension'};
+                    $local_path = $config->{'upload_local_path'} . '/';
+                    $full_path = $local_path . $filename;
+                    if ( $self->_exists_in_directory( $full_path ) ) {
+                        my $cmd = `rm $full_path`;
+                        if ( $? ) {
+                            push @!, "Can not delete $full_path, $?";
+                        }
+                    }
+                }
+                # удаление описания файла
+                unless ( @! ) {
+                    $filename = $$fileinfo{'new_name'} . '.' . 'desc';
+                    $full_path = $local_path . $filename;
+                    if ( $self->_exists_in_directory( $full_path ) ) {
+                        my $cmd = `rm $full_path`;
+                        if ( $? ) {
+                            push @!, "Can not delete $full_path description, $?";
+                        }
+                    }
+                }
+                # store real file name 
                 $$data{'title'} = $$data{'filename'};
 
                 # генерация имени файла
@@ -420,7 +447,7 @@ sub save {
 
                 # запись файла
                 my $res = write_file(
-                    $config->{'upload_local_path'} . $$data{'filename'} . '.' . $$data{'extension'},
+                    $config->{'upload_local_path'} . '/' . $$data{'filename'} . '.' . $$data{'extension'},
                     { binmode => ':utf8' },
                     $$data{'content'}
                 );
@@ -440,7 +467,53 @@ sub save {
 
                 # создание файла с описанием
                 unless ( @! ) {
-                    my $local_path = $config->{'upload_local_path'};
+                    my $local_path = $config->{'upload_local_path'} . '/';
+                    my $extension = $config->{'desc_extension'};
+                    my $write_result = write_file(
+                        $local_path . $$data{'filename'} . '.' . $extension,
+                        { binmode => ':utf8' },
+                        $json
+                    );
+                    push @!, "Can not write desc of $$data{'title'}" unless $write_result;
+                }
+            }
+            # если id нету, создание нового файла и ввод записи
+            else {
+                # store real file name 
+                $$data{'title'} = $$data{'filename'};
+
+                # генерация имени файла
+                $$data{'filename'} = sha256_hex( $$data{'filename'}, $salt );
+
+                # присвоение пустого значения вместо null
+                $$data{'description'} = '' unless ( $$data{'description'} );
+
+                # получение точного времени
+                $$data{'time_create'} = $self->model('Utils')->_sec2date( time() );
+
+                # запись файла
+                my $res = write_file(
+                    $config->{'upload_local_path'} . '/' . $$data{'filename'} . '.' . $$data{'extension'},
+                    { binmode => ':utf8' },
+                    $$data{'content'}
+                );
+                push @!, "Can not store '$$data{'filename'}' file" unless $res;
+
+                # ввод данных в таблицу
+                unless ( @! ) {
+                    $result = $self->model('User_doc')->_insert_media( $data );
+                }
+
+                # преобразование данных в json
+                unless ( @! ) {
+                    # delete $$data{'content'};
+                    $json = encode_json ( $data );
+                    push @!, "Can not convert into json $$data{'title'}" unless $json;
+                }
+
+                # создание файла с описанием
+                unless ( @! ) {
+                    my $local_path = $config->{'upload_local_path'} . '/';
                     my $extension = $config->{'desc_extension'};
                     my $write_result = write_file(
                         $local_path . $$data{'filename'} . '.' . $extension,

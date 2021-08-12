@@ -243,12 +243,6 @@
     "name":            "name",
     "patronymic":      "patronymic",
     "phone":           "+7(921)1111111",
-    "extension":        "svg",
-    "filename":         "bMLryezYQWaEi2z22X4mwC8Gma1L0k7flVWCsMCrYAyzwgAa",
-    "url":              "http://house/uploads/bMLryezYQWaEi2z22X4mwC8Gma1L0k7flVWCsMCrYAyzwgAa.svg",
-    "mime":             "image/svg+xml",
-    "size":             973,
-    "real_filename":    "eye-slash-solid.svg"
   },
     {
     "id":               2,
@@ -259,12 +253,6 @@
     "name":            "name",
     "patronymic":      "patronymic",
     "phone":           "+7(921)1111111",
-    "extension":        "svg",
-    "filename":         "bMLryezYQWaEi2z22X4mwC8Gma1L0k7flVWCsMCrYAyzwgAa",
-    "url":              "http://house/uploads/bMLryezYQWaEi2z22X4mwC8Gma1L0k7flVWCsMCrYAyzwgAa.svg",
-    "mime":             "image/svg+xml",
-    "size":             973,
-    "real_filename":    "eye-slash-solid.svg"
   },
   "status":"ok",
   "total":"2"

@@ -15,7 +15,7 @@ $t = Test::Mojo->new('Houseapp');
 
 # Устанавливаем адрес
 $host = $t->app->config->{'host'};
-
+diag Dumper( $host );
 # clear_db();
 
 # путь к директории с файлами 
@@ -48,7 +48,7 @@ $test_data = {
             'password'    => $t->app->_random_string( 32 ),
             'description' => $t->app->_random_string( 256 ),
             'patronymic' => $t->app->_random_string( 24 ),
-            upload => { file => $picture_path . 'all_right.svg' }
+            upload => { file => $picture_path . 'all_right1.svg' }
         },
         'result' => {
             'id'        => $answer + 1,
@@ -64,7 +64,7 @@ $test_data = {
             'phone'    => '7(921)1111111',
             'password'    => $t->app->_random_string( 32 ),
             'description' => $t->app->_random_string( 256 ),
-            upload => { file => $picture_path . 'all_right.svg' }
+            upload => { file => $picture_path . 'all_right2.svg' }
         },
         'result' => {
             'id'        => $answer + 2,
@@ -79,7 +79,7 @@ $test_data = {
             'email'     => $t->app->_random_string( 24 ),
             'password'    => $t->app->_random_string( 32 ),
             'description' => $t->app->_random_string( 256 ),
-            upload => { file => $picture_path . 'all_right.svg' }
+            upload => { file => $picture_path . 'all_right3.svg' }
         },
         'result' => {
             'id'        => $answer + 3,
@@ -132,7 +132,7 @@ $test_data = {
             'phone'    => '7(921)1111111',
             'password'    => $t->app->_random_string( 32 ),
             'patronymic' => $t->app->_random_string( 24 ),
-            upload => { file => $picture_path . 'all_right.svg' }
+            upload => { file => $picture_path . 'all_right4.svg' }
         },
         'result' => {
             'id'        => $answer + 6,
@@ -153,7 +153,7 @@ $test_data = {
             'password'    => $t->app->_random_string( 32 ),
             'description' => $t->app->_random_string( 256 ),
             'patronymic' => $t->app->_random_string( 24 ),
-            upload => { file => $picture_path . 'all_right.svg' }
+            upload => { file => $picture_path . 'all_right5.svg' }
         },
         'result' => {
             'message'   => "/user/add _check_fields: empty field 'phone', didn't match regular expression",
@@ -172,7 +172,7 @@ $test_data = {
             'password'    => $t->app->_random_string( 32 ),
             'description' => $t->app->_random_string( 256 ),
             'patronymic' => $t->app->_random_string( 24 ),
-            upload => { file => $picture_path . 'all_right.svg' }
+            upload => { file => $picture_path . 'all_right5.svg' }
         },
         'result' => {
             'message'    => "login temp already used",
@@ -191,13 +191,32 @@ $test_data = {
             'password'    => $t->app->_random_string( 32 ),
             'description' => $t->app->_random_string( 256 ),
             'patronymic' => $t->app->_random_string( 24 ),
-            upload => { file => $picture_path . 'all_right.svg' }
+            upload => { file => $picture_path . 'all_right5.svg' }
         },
         'result' => {
             'message'    => "email temp already used",
             'status'     => 'fail'
         },
         'comment' => 'Same email:'
+    },
+    10 => {
+        'data' => {
+            'name'      => $t->app->_random_string( 24 ),
+            'surname'     => $t->app->_random_string( 24 ),
+            'status'    => 1,
+            'login'      => $t->app->_random_string( 16 ),
+            'email'     => $t->app->_random_string( 24 ),
+            'phone'    => '7(921)1111111',
+            'password'    => $t->app->_random_string( 32 ),
+            'description' => $t->app->_random_string( 256 ),
+            'patronymic' => $t->app->_random_string( 24 ),
+            upload => { file => $picture_path . 'all_right1.svg' }
+        },
+        'result' => {
+            'message'    => "file with this name already used",
+            'status'     => 'fail'
+        },
+        'comment' => 'Same upload filename:'
     }
 
 };

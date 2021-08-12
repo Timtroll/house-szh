@@ -38,17 +38,26 @@ sub _insert_user {
 }
 
 sub _get_list {
-    my $self = shift;
+    my ( $self, $data ) = @_;
 
     my ( $sql, $sth, $users, $list );
 
-    # получаем список групп
-    $sql = 'SELECT id,label FROM "public"."users"';
+    # получаем список пользователей
+    $sql =  'SELECT u."id", u."login", u."email", u."status", a."surname", a."name", a."patronymic", a."phone"
+    FROM "public"."users" AS u LEFT OUTER JOIN "public"."user_links" AS l
+    ON u."id" = l."first_id" AND l."second_type" = \'user_data\' LEFT OUTER JOIN "public"."user_data" AS a 
+    ON  a."id" = l."second_id"';
+    $sql .= ' ORDER BY ' . $$data{'sort_field'};
+    $sql .= ' ' . $$data{'sort'};
+    $sql .= ' LIMIT :limit' if $$data{'limit'};
+    $sql .= ' OFFSET :offset' if $$data{'offset'};
 
     $sth = $self->{app}->pg_dbh->prepare( $sql );
+    $sth->bind_param( ':limit', $$data{'limit'} ) if $$data{'limit'};
+    $sth->bind_param( ':offset', $$data{'offset'} ) if $$data{'offset'};
     $sth->execute();
 
-    $users = $sth->fetchall_hashref( 'id' );
+    $users = $sth->fetchall_arrayref();
     $sth->finish();
     push @!, "couldn't get list of users" unless $users;
 
@@ -156,6 +165,28 @@ sub _delete {
         $sth->finish();
 
         push @!, "Could not delete User '$$data{'id'}'" if $result eq '0E0';
+    }
+
+    return $result;
+}
+
+sub _get_password {
+    my ( $self, $id ) = @_;
+
+    my ( $sql, $sth, $result );
+
+    push @!, 'no id' unless $id;
+
+    unless( @! ) {
+        # удаление записи из таблицы groups
+        $sql = 'SELECT "password" FROM "public"."users" WHERE "id" = :id';
+
+        $sth = $self->{app}->pg_dbh->prepare( $sql );
+        $sth->bind_param( ':id', $id );
+        $result = $sth->execute();
+        $result = $sth->fetchrow_hashref();
+        $sth->finish();
+        $result = $$result{'password'};
     }
 
     return $result;
