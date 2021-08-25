@@ -7,24 +7,50 @@ use common;
 use Data::Dumper;
 use Digest::SHA qw( sha256_hex );
 use Mojo::JSON qw( encode_json );
+use Houseapp::Mock::Extensions;
 
 sub add {
     my $self = shift;
 
-<<<<<<< HEAD
-    my ( $id, $data, $resp, $result, $json, $url );
-=======
-    my ( $id, $data, $result, $filename, $resp, $url, $json, $local_path, $extension, $write_result, $name_length, $salt );
->>>>>>> origin/test
+    my ( $id, $data, $result, $filename, $resp, $url, $json, $local_path, $extension, $write_result, $name_length, $salt, $full_path );
 
     # проверка данных
     $data = $self->_check_fields();
+
+    # проверяем, занят ли логин
+    if ( $self->model('Utils')->_exists_in_table('users', 'login', $$data{'login'} ) ) {
+        push @!, "login $$data{'login'} already used"; 
+    }
+    # проверяем, занят ли емэйл
+    if ( $self->model('Utils')->_exists_in_table('users', 'email', $$data{'email'} ) ) {
+        push @!, "email $$data{'email'} already used"; 
+    }
+
+    unless ( @! ) {
+        if ( $$data{'content'} ) {
+            # получение соли из конфига
+            $salt = $self->{'app'}->{'config'}->{'secrets'}->[0];
+
+            # store real file name
+            $$data{'title'} = $$data{'filename'};
+
+            # генерация имени файла
+            $$data{'filename'} = sha256_hex( $$data{'filename'}, $salt );
+
+            $filename = $$data{'filename'} . '.' . $$data{'extension'};
+            $local_path = $config->{'upload_local_path'} . '/';
+            $full_path = $local_path . $filename;
+            if ( $self->_exists_in_directory( $full_path ) ) {
+                push @!, "file with this name already used";
+            }
+        }
+    }
 
     unless ( @! ) {
         # получение соли из конфига
         $salt = $self->{'app'}->{'config'}->{'secrets'}->[0];
 
-        # преобразование паоля
+        # преобразование пароля
         $$data{'password'} = sha256_hex( $$data{'password'}, $salt );
 
         $$data{'id'} = $self->model('User')->_insert_user( $data );
@@ -32,72 +58,56 @@ sub add {
 
     unless ( @! ) {
         if ( $$data{'name'} || $$data{'surname'} || $$data{'patronymic'} || $$data{'phone'} ) {
-            $$data{'name'}       = '' unless $$data{'name'};
-            $$data{'surname'}    = '' unless $$data{'surname'};
-            $$data{'patronymic'} = '' unless $$data{'patronymic'};
-            $$data{'phone'}      = '' unless $$data{'phone'};
             $id = $self->model('User_data')->_insert_data( $data );
         }
     }
 
     unless ( @! ) {
-        # store real file name
-        $$data{'title'} = $$data{'filename'};
+        if ( $$data{'content'} ) {
 
-        # генерация имени файла
-        $$data{'filename'} = sha256_hex( $$data{'filename'}, $salt );
 
-        # присвоение пустого значения вместо null
-        $$data{'description'} = '' unless ( $$data{'description'} );
+            # присвоение пустого значения вместо null
+            $$data{'description'} = '' unless ( $$data{'description'} );
 
-        # получение точного времени
-        $$data{'time_create'} = $self->model('Utils')->_sec2date( time() );
+            # получение точного времени
+            $$data{'time_create'} = $self->model('Utils')->_sec2date( time() );
 
-        # получение mime
-        $$data{'mime'} = $config->{'valid_extensions'}->{$$data{'extension'}} || '';
+            # запись файла
+            my $res = write_file(
+                $config->{'upload_local_path'} . '/' . $$data{'filename'} . '.' . $$data{'extension'},
+                { binmode => ':utf8' },
+                $$data{'content'}
+            );
+            push @!, "Can not store '$$data{'filename'}' file" unless $res;
 
-        # запись файла
-        my $res = write_file(
-            $config->{'upload_local_path'} . $$data{'filename'} . '.' . $$data{'extension'},
-            { binmode => ':utf8' },
-            $$data{'content'}
-        );
-        push @!, "Can not store '$$data{'filename'}' file" unless $res;
-    }
+            # ввод данных в таблицу
+            unless ( @! ) {
+                $result = $self->model('User_doc')->_insert_media( $data );
+            }
 
-    # ввод данных в таблицу
-    unless ( @! ) {
-        $result = $self->model('User_doc')->_insert_media( $data );
-    }
+            # преобразование данных в json
+            unless ( @! ) {
+                # delete $$data{'content'};
+                $json = encode_json ( $data );
+                push @!, "Can not convert into json $$data{'title'}" unless $json;
+            }
 
-    # преобразование данных в json
-    unless ( @! ) {
-        # delete $$data{'content'};
-        $json = encode_json ( $data );
-        push @!, "Can not convert into json $$data{'title'}" unless $json;
-    }
-
-    # создание файла с описанием
-    unless ( @! ) {
-        my $local_path = $config->{'upload_local_path'};
-        my $extension = $config->{'desc_extension'};
-        my $write_result = write_file(
-            $local_path . $$data{'filename'} . '.' . $extension,
-            { binmode => ':utf8' },
-            $json
-        );
-        push @!, "Can not write desc of $$data{'title'}" unless $write_result;
-    }
-
-    # получение url
-    unless ( @! ) {
-        $url = $config->{'site_url'} . $config->{'upload_url_path'} . $$data{'filename'} . '.' . $$data{ 'extension' };
+            # создание файла с описанием
+            unless ( @! ) {
+                my $local_path = $config->{'upload_local_path'} . '/';
+                my $extension = $config->{'desc_extension'};
+                my $write_result = write_file(
+                    $local_path . $$data{'filename'} . '.' . $extension,
+                    { binmode => ':utf8' },
+                    $json
+                );
+                push @!, "Can not write desc of $$data{'title'}" unless $write_result;
+            }
+        }
     }
 
     $resp->{'message'} = join( "\n", @! ) if @!;
-    $resp->{'id'} = $result if $result;
-    $resp->{'mime'} = $$data{'mime'} if $result;
-    $resp->{'url'} = $url if $url;
+    $resp->{'id'} = $$data{'id'} if $$data{'id'};
     $resp->{'status'} = @! ? 'fail' : 'ok';
 
     @! = ();
@@ -115,22 +125,18 @@ sub index {
 
     unless ( @! ) {
         $$data{'page'} = 1 unless $$data{'page'};
-        $$data{'limit'}  = $config->{'per_page'};
+        $$data{'limit'}  = $$data{'per_page'};
         $$data{'offset'} = ( $$data{'page'} - 1 ) * $$data{'limit'};
+        $$data{'sort'} = 'ASC' unless $$data{'sort'};
+        $$data{'sort_field'} = 'id' unless $$data{'sort_field'};
 
         # получаем список пользователей
         $users = $self->model('User')->_get_list( $data );
     }
 
-    unless ( @! ) {
-        # получаем список данных о пользователях
-        $user_data = $self->model('User_data')->_get_list( $data );
-    }
-
     $resp->{'message'} = join("\n", @!) if @!;
     $resp->{'status'} = @! ? 'fail' : 'ok';
     $resp->{'users'} = $users unless @!;
-    $resp->{'data'} = $user_data unless @!;
 
     @! = ();
 
@@ -147,10 +153,10 @@ sub activate {
 
     # проверка существования элемента для изменения
     unless ( @! ) {
-        $$data{'table'} = 'user';
+        $$data{'table'} = 'users';
 
-        unless ( $self->model('Utils')->_exists_in_table( 'user', 'id', $$data{'id'} ) ) {
-            push @!, "user with '$$data{'id'}' doesn't exist";
+        unless ( $self->model('Utils')->_exists_in_table( $$data{'table'}, 'id', $$data{'id'} ) ) {
+            push @!, "user with id '$$data{'id'}' doesn't exist";
         }
         unless ( @! ) {
             $toggle = $self->model('Utils')->_activate( $data );
@@ -177,9 +183,9 @@ sub deactivate {
 
     # проверка существования элемента для изменения
     unless ( @! ) {
-        $$data{'table'} = 'user';
+        $$data{'table'} = 'users';
 
-        unless ( $self->model('Utils')->_exists_in_table( 'user', 'id', $$data{'id'} ) ) {
+        unless ( $self->model('Utils')->_exists_in_table( $$data{'table'}, 'id', $$data{'id'} ) ) {
             push @!, "user with '$$data{'id'}' doesn't exist";
         }
         unless ( @! ) {
@@ -200,16 +206,16 @@ sub deactivate {
 sub delete {
     my $self = shift;
 
-    my ( $delete, $resp, $data, $fileinfo, $filename, $local_path, $full_path, $cmd );
+    my ( $delete, $resp, $data, $fileinfo, $filename, $local_path, $full_path, $cmd, $data_id, $doc_id );
 
     # проверка данных
     $data = $self->_check_fields();
 
     # проверка существования элемента для изменения
     unless ( @! ) {
-        $$data{'table'} = 'user';
+        $$data{'table'} = 'users';
 
-        unless ( $self->model('Utils')->_exists_in_table( 'user', 'id', $$data{'id'} ) ) {
+        unless ( $self->model('Utils')->_exists_in_table( $$data{'table'}, 'id', $$data{'id'} ) ) {
             push @!, "user with '$$data{'id'}' doesn't exist";
         }
         unless ( @! ) {
@@ -217,39 +223,47 @@ sub delete {
             push @!, "Could not delete User '$$data{'id'}'" unless $delete;
         }
         unless ( @! ) {
-            $delete = $self->model('User_data')->_delete( $data );
-            push @!, "Could not delete Data '$$data{'id'}'" unless $delete;
+            $data_id = $self->model('User_data')->_get_id( $$data{'id'} );
+            if ( $data_id ) {
+                $delete = $self->model('User_data')->_delete( $data_id );
+                push @!, "Could not delete Data '$$data{'id'}'" unless $delete;
+            }
         }
 
         unless ( @! ) {
-            $fileinfo = $self->model('User_doc')->_check_media( $$data{'id'} );
+            $doc_id = $self->model('User_doc')->_get_id( $$data{'id'} );
         }
-        # удаление файла
-        unless ( @! ) {
-            $filename = $$fileinfo{'filename'} . '.' . $$fileinfo{'extension'};
-            $local_path = $config->{'upload_local_path'};
-            $full_path = $local_path . $filename;
-            if ( $self->_exists_in_directory( $full_path ) ) {
-                my $cmd = `rm $full_path`;
-                if ( $? ) {
-                    push @!, "Can not delete $full_path, $?";
+        if ( $doc_id ) {
+            unless ( @! ) {
+                $fileinfo = $self->model('User_doc')->_check_media( $doc_id );
+            }
+            # удаление файла
+            unless ( @! ) {
+                $filename = $$fileinfo{'new_name'} . '.' . $$fileinfo{'extension'};
+                $local_path = $config->{'upload_local_path'} . '/';
+                $full_path = $local_path . $filename;
+                if ( $self->_exists_in_directory( $full_path ) ) {
+                    my $cmd = `rm $full_path`;
+                    if ( $? ) {
+                        push @!, "Can not delete $full_path, $?";
+                    }
                 }
             }
-        }
-        # удаление описания файла
-        unless ( @! ) {
-            $filename = $$fileinfo{'filename'} . '.' . 'desc';
-            $full_path = $local_path . $filename;
-            if ( $self->_exists_in_directory( $full_path ) ) {
-                my $cmd = `rm $full_path`;
-                if ( $? ) {
-                    push @!, "Can not delete $full_path description, $?";
+            # удаление описания файла
+            unless ( @! ) {
+                $filename = $$fileinfo{'new_name'} . '.' . 'desc';
+                $full_path = $local_path . $filename;
+                if ( $self->_exists_in_directory( $full_path ) ) {
+                    my $cmd = `rm $full_path`;
+                    if ( $? ) {
+                        push @!, "Can not delete $full_path description, $?";
+                    }
                 }
             }
-        }
-        unless ( @! ) {
-            $delete = $self->model('User_doc')->_delete_media( $data );
-            push @!, "Could not delete Media '$$data{'id'}'" unless $delete;
+            unless ( @! ) {
+                $delete = $self->model('User_doc')->_delete_media( $doc_id );
+                push @!, "Could not delete Media '$$data{'id'}'" unless $delete;
+            }
         }
     }
 
@@ -265,7 +279,7 @@ sub delete {
 sub edit {
     my $self = shift;
 
-    my ( $result_user, $result_data, $data, $resp );
+    my ( $result_user, $data_id, $result_data, $data, $doc_id, $result_doc, $result, $resp );
 
     # проверка данных
     $data = $self->_check_fields();
@@ -277,16 +291,54 @@ sub edit {
     }
 
     unless ( @! ) {
-        $result_user = $self->model('User')->_get_user( $data );
+        $result_user = $self->model('User')->_get_user( $$data{'id'} );
     }
     unless ( @! ) {
-        $result_data = $self->model('User_data')->_get_user( $data );
+        $data_id = $self->model('User_data')->_get_id( $$data{'id'} );
+        if ( $data_id ) {
+            $result_data = $self->model('User_data')->_get_data( $data_id );
+        }
+    }
+    unless ( @! ) {
+        $doc_id = $self->model('User_doc')->_get_id( $$data{'id'} );
+        if ( $doc_id ) {
+            $result_doc = $self->model('User_doc')->_get_media( $doc_id );
+        }
+    }
+
+    unless ( @! ) {
+        $$result{'id'}     = $$result_user{'id'};
+        $$result{'login'}  = $$result_user{'login'};
+        $$result{'email'}  = $$result_user{'email'};
+        $$result{'status'} = $$result_user{'status'};
+
+        if ( $result_data ) {
+            $$result{'surname'}    = $$result_data{'surname'} if $$result_data{'surname'};
+            $$result{'name'}       = $$result_data{'name'} if $$result_data{'name'};
+            $$result{'patronymic'} = $$result_data{'patronymic'} if $$result_data{'patronymic'};
+            $$result{'phone'}      = $$result_data{'phone'} if $$result_data{'phone'};
+        }
+
+        if ( $result_doc ) {
+            $$result{'extension'}     = $$result_doc{$doc_id}{'extension'};
+            $$result{'filename'}      = $$result_doc{$doc_id}{'new_name'};
+            $$result{'size'}          = $$result_doc{$doc_id}{'size'};
+            $$result{'real_filename'} = $$result_doc{$doc_id}{'old_name'};
+
+            $$result{'url'} = $config->{'url'} . $config->{'upload_local_path'} . '/' . $$result{'filename'} . '.' . $$result{'extension'};
+
+            my $i = 0;
+            while ( $mime->[$i]->[1] ne $$result{'extension'} ) {
+                $i++;
+            }
+            $$result{'mime'} = $mime->[$i]->[0];
+
+        }
     }
 
     $resp->{'message'} = join("\n", @!) if @!;
     $resp->{'status'} = @! ? 'fail' : 'ok';
-    $resp->{'user'} = $result_user unless @!;
-    $resp->{'data'} = $result_data unless @!;
+    $resp->{'data'} = $result unless @!;
 
     @! = ();
 
@@ -296,7 +348,7 @@ sub edit {
 sub save {
     my ( $self ) = shift;
 
-    my ( $id, $parent, $data, $resp );
+    my ( $id, $result, $json, $local_path, $extension, $write_result, $name_length, $data, $salt, $resp, $fileinfo, $doc_id, $filename, $full_path );
 
 
     # проверка данных
@@ -304,19 +356,210 @@ sub save {
 
     # проверка существования обновляемой строки
     unless ( @! ) {
-        unless ( $self->model('Utils')->_exists_in_table('groups', 'id', $$data{'id'}) ) {
+        unless ( $self->model('Utils')->_exists_in_table('users', 'id', $$data{'id'}) ) {
             push @!, "User with id '$$data{'id'}' does not exist";
         }
     }
 
+    # проверка паролей
+    unless ( @! ) {
+        if ( $$data{'password'} && !$$data{'newpassword'} ) {
+            push @!, 'Empty newpassword';
+        }
+        elsif ( !$$data{'password'} && $$data{'newpassword'} ) {
+            push @!, 'Empty password';
+        }
+        elsif ( $$data{'password'} && $$data{'password'} eq $$data{'newpassword'} ) {
+            push @!, 'Password and newpassword are the same';
+        }
+    }
+
+    unless ( @! ) {
+        # проверяем, используется ли логин другим пользователем
+        if ( $$data{'login'} && $self->model('Utils')->_exists_in_table('users', 'login', $$data{'login'}, $$data{'id'} ) ) {
+            push @!, "login '$$data{ login }' already used"; 
+        }
+        # проверяем, используется ли емэйл другим пользователем
+        elsif ( $$data{'email'} && $self->model('Utils')->_exists_in_table('users', 'email', $$data{'email'}, $$data{'id'} ) ) {
+            push @!, "email '$$data{ email }' already used"; 
+        }
+    }
+
+    unless ( @! ) {
+        if ( $$data{'password'} ) {
+            # получение соли из конфига
+            $salt = $self->{'app'}->{'config'}->{'secrets'}->[0];
+
+            # преобразование пароля
+            $$data{'password'} = sha256_hex( $$data{'password'}, $salt );
+
+            unless ( $self->model('User')->_get_password( $$data{'id'} ) eq $$data{'password'} ) {
+                push @!, "wrong password";
+            }
+            $$data{'password'} = sha256_hex( $$data{'newpassword'}, $salt );
+        } 
+    }
     unless ( @! ) {
         $id = $self->model('User')->_update_users( $data );
     }
     unless ( @! ) {
-        $id = $self->model('User_data')->_update_data( $data );
+        # проверка существования данных для ввода в user_data
+        if ( $$data{'name'} || $$data{'surname'} || $$data{'patronymic'} || $$data{'phone'} ) {
+            # получение id в таблице user_data
+            $$data{'id'} = $self->model('User_data')->_get_id( $id );
+            # если id существует, обновление записи
+            if ( $$data{'id'} ) {
+                $result = $self->model('User_data')->_update_data( $data );
+            }
+            # если id нету, создание новой записи
+            else {
+                $$data{'id'} = $id;
+                $result = $self->model('User_data')->_insert_data( $data );
+            }
+        }
     }
     unless ( @! ) {
-        $id = $self->model('User_doc')->_update_media( $data );
+        if ( $$data{'content'} ) {
+            # получение id в таблице user_doc
+            $$data{'id'} = $self->model('User_doc')->_get_id( $id );
+
+            if ( $self->model('Utils')->_exists_in_table('user_doc', 'old_name', $$data{'filename'}, $$data{'id'} ) ) {
+                push @!, "file with this name already used"; 
+            }
+
+            unless ( @! ) {
+                # если id существует, обновление записи
+                if ( $$data{'id'} ) {
+
+                    # генерация имени файла
+                    $$data{'new_name'} = sha256_hex( $$data{'filename'}, $salt );
+
+                    # # обновление записи
+                    # $result = $self->model('User_doc')->_update_media( $data );
+
+                    unless ( @! ) {
+                        $fileinfo = $self->model('User_doc')->_check_media( $$data{'id'} );
+                    }
+                    # удаление файла
+                    unless ( @! ) {
+                        $filename = $$fileinfo{'new_name'} . '.' . $$fileinfo{'extension'};
+                        $local_path = $config->{'upload_local_path'} . '/';
+                        $full_path = $local_path . $filename;
+
+                        if ( $self->_exists_in_directory( $full_path ) ) {
+                            my $cmd = `rm $full_path`;
+                            if ( $? ) {
+                                push @!, "Can not delete $full_path, $?";
+                            }
+                        }
+                    }
+                    # удаление описания файла
+                    unless ( @! ) {
+                        $filename = $$fileinfo{'new_name'} . '.' . 'desc';
+                        $full_path = $local_path . $filename;
+
+                        if ( $self->_exists_in_directory( $full_path ) ) {
+                            my $cmd = `rm $full_path`;
+                            if ( $? ) {
+                                push @!, "Can not delete $full_path description, $?";
+                            }
+                        }
+                    }
+                    # store real file name 
+                    $$data{'title'} = $$data{'filename'};
+
+                    # генерация имени файла
+                    $$data{'new_filename'} = sha256_hex( $$data{'filename'}, $salt );
+
+                    # присвоение пустого значения вместо null
+                    $$data{'description'} = '' unless ( $$data{'description'} );
+
+                    # получение точного времени
+                    $$data{'time_create'} = $self->model('Utils')->_sec2date( time() );
+
+                    # запись файла
+                    my $res = write_file(
+                        $config->{'upload_local_path'} . '/' . $$data{'new_filename'} . '.' . $$data{'extension'},
+                        { binmode => ':utf8' },
+                        $$data{'content'}
+                    );
+                    push @!, "Can not store '$$data{'new_filename'}' file" unless $res;
+
+                    # ввод данных в таблицу
+                    unless ( @! ) {
+                        # обновление записи
+                        $result = $self->model('User_doc')->_update_media( $data );
+                    }
+
+                    # преобразование данных в json
+                    unless ( @! ) {
+                        # delete $$data{'content'};
+                        $json = encode_json ( $data );
+
+                        push @!, "Can not convert into json $$data{'title'}" unless $json;
+                    }
+
+                    # создание файла с описанием
+                    unless ( @! ) {
+                        my $local_path = $config->{'upload_local_path'} . '/';
+                        my $extension = $config->{'desc_extension'};
+                        my $write_result = write_file(
+                            $local_path . $$data{'new_filename'} . '.' . $extension,
+                            { binmode => ':utf8' },
+                            $json
+                        );
+                        push @!, "Can not write desc of $$data{'title'}" unless $write_result;
+                    }
+                }
+
+                # если id нету, создание нового файла и ввод записи
+                else {
+                    # store real file name 
+                    $$data{'title'} = $$data{'filename'};
+
+                    # генерация имени файла
+                    $$data{'new_filename'} = sha256_hex( $$data{'filename'}, $salt );
+
+                    # присвоение пустого значения вместо null
+                    $$data{'description'} = '' unless ( $$data{'description'} );
+
+                    # получение точного времени
+                    $$data{'time_create'} = $self->model('Utils')->_sec2date( time() );
+
+                    # запись файла
+                    my $res = write_file(
+                        $config->{'upload_local_path'} . '/' . $$data{'new_filename'} . '.' . $$data{'extension'},
+                        { binmode => ':utf8' },
+                        $$data{'content'}
+                    );
+                    push @!, "Can not store '$$data{'new_filename'}' file" unless $res;
+
+                    # ввод данных в таблицу
+                    unless ( @! ) {
+                        $result = $self->model('User_doc')->_insert_media( $data );
+                    }
+
+                    # преобразование данных в json
+                    unless ( @! ) {
+                        # delete $$data{'content'};
+                        $json = encode_json ( $data );
+                        push @!, "Can not convert into json $$data{'title'}" unless $json;
+                    }
+
+                    # создание файла с описанием
+                    unless ( @! ) {
+                        my $local_path = $config->{'upload_local_path'} . '/';
+                        my $extension = $config->{'desc_extension'};
+                        my $write_result = write_file(
+                            $local_path . $$data{'new_filename'} . '.' . $extension,
+                            { binmode => ':utf8' },
+                            $json
+                        );
+                        push @!, "Can not write desc of $$data{'title'}" unless $write_result;
+                    }
+                }
+            }
+        }
     }
 
     $resp->{'message'} = join("\n", @!) if @!;

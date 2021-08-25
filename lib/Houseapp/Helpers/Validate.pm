@@ -13,6 +13,7 @@ use Data::Dumper;
 use Houseapp::Model::Utils;
 use common;
 use DDP;
+use Houseapp::Mock::Extensions;
 
 # binmode STDOUT, ":utf8";
 # binmode STDIN, ":utf8";
@@ -35,7 +36,6 @@ sub register {
         my %data = ();
 
         foreach my $field ( sort keys %{$$vfields{$url_for}} ) {
-warn $field; 
             # пропускаем роуты, которых нет в хэше валидации
             next unless keys %{ $$vfields{$url_for} };
 
@@ -92,6 +92,19 @@ warn $field;
                 $data{'extension'} = lc $1 if $1;
                 unless ( $data{'extension'} ) {
                     push @!, "$url_for _check_fields: can't read extension";
+                    last;
+                }
+
+                # проверка того, что разрешено загружать файл с текущим расширением
+                my $flag = 0;
+                for ( my $i = 0; $i < scalar( @$mime ); $i++ ) {
+                    if ( $mime->[$i]->[1] eq $data{'extension'} ) {
+                        $flag = 1;
+                        last;
+                    }
+                }
+                unless ( $flag ) {
+                    push @!, "$url_for _check_fields: extension $data{'extension'} is not valid";
                     last;
                 }
 

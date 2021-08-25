@@ -7,6 +7,8 @@ BEGIN {
 
 use Test::More;
 use Test::Mojo;
+use Mojo::JSON qw( decode_json );
+use Digest::SHA qw( sha256_hex );
 use Data::Dumper;
 
 my $t = Test::Mojo->new('Houseapp');
@@ -30,52 +32,41 @@ diag "";
 my $response = decode_json $t->{'tx'}->{'res'}->{'content'}->{'asset'}->{'content'};
 my $token = $response->{'data'}->{'token'};
 
-
 # Ввод данных для редактирования
 my $test_data = {
     1 => {
         'data' => {
-            'name'      => 'name1',
-            'surname'     => 'surname1',
+            'name'      => $t->app->_random_string( 24 ),
+            'surname'     => $t->app->_random_string( 24 ),
             'status'    => 1,
-            'login'      => 'login',
-            'email'     => 'email',
-            'phone'    => 'phone',
-            'password'    => 'password',
-            'description' => 'description',
-            upload => { file => $picture_path . 'all_right.svg' }
-        },
-        'result' => {
-            'id'        => '1',
-            'status'    => 'ok'
+            'login'      => $t->app->_random_string( 16 ),
+            'email'     => $t->app->_random_string( 24 ),
+            'phone'    => '7(921)1111111',
+            'password'    => 'admin',
+            'description' => $t->app->_random_string( 256 ),
+            'patronymic' => $t->app->_random_string( 24 ),
+            upload => { file => $picture_path . 'all_right_save1.svg' }
         }
     },
     2 => {
         'data' => {
-            'name'      => 'name2',
-            'surname'     => 'surname2',
             'status'    => 1,
-            'login'      => 'login2',
-            'email'     => 'email2',
-            'phone'    => 'phone2',
-            'password'    => 'password2',
-            'description' => 'description',
-            upload => { file => $picture_path . 'all_right.svg' }
-        },
-        'result' => {
-            'id'        => '2',
-            'status'    => 'ok' 
+            'login'      => $t->app->_random_string( 16 ),
+            'email'     => $t->app->_random_string( 24 ),
+            'password'    => 'admin',
+            'description' => $t->app->_random_string( 256 ),
+            upload => { file => $picture_path . 'all_right_save2.svg' }
         }
     }
 };
-diag "Add groups:";
+diag "Add users:";
+
 foreach my $test (sort {$a <=> $b} keys %{$test_data}) {
     $t->post_ok( $host.'/user/add' => {token => $token} => form => $$test_data{$test}{'data'} );
     unless ( $t->status_is(200)->{tx}->{res}->{code} == 200  ) {
         diag("Can't connect");
         exit; 
     }
-    $t->json_is( $$test_data{$test}{'result'} );
     diag "";
 }
 
@@ -83,25 +74,75 @@ $test_data = {
     # положительные тесты
     1 => {
         'data' => {
-            'id'        => 1,
-            'name'      => 'name',
-            'surname'     => 'surname',
-            'status'    => 1
+            'id'        => 2,
+            'name'      => $t->app->_random_string( 24 ),
+            'surname'     => $t->app->_random_string( 24 ),
+            'status'    => 1,
+            'login'      => $t->app->_random_string( 16 ),
+            'email'     => $t->app->_random_string( 24 ),
+            'phone'    => '7(921)1111111',
+            'password'    => 'admin',
+            'newpassword'    => 'newadmin',
+            'description' => $t->app->_random_string( 256 ),
+            'patronymic' => $t->app->_random_string( 24 ),
+            upload => { file => $picture_path . 'all_right_save1.svg' }
         },
         'result' => {
             'status'    => 'ok',
-            'id'        => 1,
+            'id'        => 2,
         },
         'comment' => 'All fields:' 
     },
-
-    # отрицательные тесты
     2 => {
         'data' => {
+            'id'        => 2,
+            'status'    => 1,
+            'login'      => $t->app->_random_string( 16 ),
+            'email'     => $t->app->_random_string( 24 ),
+            'description' => $t->app->_random_string( 256 ),
+            upload => { file => $picture_path . 'all_right_save1.svg' }
+        },
+        'result' => {
+            'status'    => 'ok',
+            'id'        => 2,
+        },
+        'comment' => 'No data:' 
+    },
+    3 => {
+        'data' => {
+            'id'        => 2,
+            'name'      => $t->app->_random_string( 24 ),
+            'surname'     => $t->app->_random_string( 24 ),
+            'status'    => 1,
+            'login'      => 'newlogin',
+            'email'     => $t->app->_random_string( 24 ),
+            'phone'    => '7(921)1111111',
+            'password'    => 'newadmin',
+            'newpassword'    => 'admin',
+            'patronymic' => $t->app->_random_string( 24 ),
+        },
+        'result' => {
+            'status'    => 'ok',
+            'id'        => 2,
+        },
+        'comment' => 'No doc:' 
+    },
+
+    # отрицательные тесты
+    4 => {
+        'data' => {
             'id'        => 404,
-            'name'      => 'name3',
-            'surname'     => 'surname3',
-            'status'    => 1
+            'name'      => $t->app->_random_string( 24 ),
+            'surname'     => $t->app->_random_string( 24 ),
+            'status'    => 1,
+            'login'      => $t->app->_random_string( 16 ),
+            'email'     => $t->app->_random_string( 24 ),
+            'phone'    => '7(921)1111111',
+            'password'    => 'admin',
+            'newpassword'    => 'newadmin',
+            'description' => $t->app->_random_string( 256 ),
+            'patronymic' => $t->app->_random_string( 24 ),
+            upload => { file => $picture_path . 'all_right.svg' }
         },
         'result' => {
             'message'   => "User with id '404' does not exist",
@@ -109,11 +150,19 @@ $test_data = {
         },
         'comment' => 'Wrong id:' 
     },
-    3 => {
+    5 => {
         'data' => {
-            'name'      => 'name',
-            'surname'     => 'surname',
-            'status'    => 1
+            'name'      => $t->app->_random_string( 24 ),
+            'surname'     => $t->app->_random_string( 24 ),
+            'status'    => 1,
+            'login'      => $t->app->_random_string( 16 ),
+            'email'     => $t->app->_random_string( 24 ),
+            'phone'    => '7(921)1111111',
+            'password'    => 'admin',
+            'newpassword'    => 'newadmin',
+            'description' => $t->app->_random_string( 256 ),
+            'patronymic' => $t->app->_random_string( 24 ),
+            upload => { file => $picture_path . 'all_right.svg' }
         },
         'result' => {
             'message'   => "/user/save _check_fields: didn't has required data in 'id' = ''",
@@ -121,80 +170,88 @@ $test_data = {
         },
         'comment' => 'No id:' 
     },
-    4 => {
-        'data' => {
-            'id'        => 1,
-            'surname'     => 'surname',
-            'status'    => 1
-        },
-        'result' => {
-            'message'   => "/user/save _check_fields: didn't has required data in 'name' = ''",
-            'status'    => 'fail'
-        },
-        'comment' => 'No name:' 
-    },
-    5 => {
-        'data' => {
-            'id'        => 1,
-            'name'      => 'name',
-            'status'    => 1
-        },
-        'result' => {
-            'message'   => "/user/save _check_fields: didn't has required data in 'surname' = ''",
-            'status'    => 'fail'
-        },
-        'comment' => 'No surname:' 
-    },
     6 => {
         'data' => {
-            'id'        => 1,
-            'name'      => 'name',
-            'surname'     => 'surname'
+            'id'        => 3,
+            'name'      => $t->app->_random_string( 24 ),
+            'surname'     => $t->app->_random_string( 24 ),
+            'status'    => 1,
+            'login'      => 'newlogin',
+            'email'     => $t->app->_random_string( 24 ),
+            'phone'    => '7(921)1111111',
+            'password'    => 'admin',
+            'newpassword'    => 'newadmin',
+            'description' => $t->app->_random_string( 256 ),
+            'patronymic' => $t->app->_random_string( 24 ),
+            upload => { file => $picture_path . 'all_right.svg' }
         },
         'result' => {
-            'message'   => "/user/save _check_fields: didn't has required data in 'status' = ''",
+            'message'   => "login 'newlogin' already used",
             'status'    => 'fail'
         },
-        'comment' => 'No value:' 
+        'comment' => 'Login already used:' 
     },
     7 => {
         'data' => {
-            'id'        => 1,
-            'name'      => 'name*',
-            'surname'     => 'surname',
-            'status'    => 1
+            'id'        => 3,
+            'name'      => $t->app->_random_string( 24 ),
+            'surname'     => $t->app->_random_string( 24 ),
+            'status'    => 1,
+            'login'      => $t->app->_random_string( 16 ),
+            'email'     => $t->app->_random_string( 24 ),
+            'phone'    => '7(921)1111111',
+            'password'    => 'admin',
+            'newpassword'    => 'admin',
+            'description' => $t->app->_random_string( 256 ),
+            'patronymic' => $t->app->_random_string( 24 ),
+            upload => { file => $picture_path . 'all_right.svg' }
         },
         'result' => {
-            'message'   => "/user/save _check_fields: empty field 'name', didn't match regular expression",
+            'message'   => "Password and newpassword are the same",
             'status'    => 'fail'
         },
-        'comment' => 'Wrong field type:' 
+        'comment' => 'Same password:' 
     },
     8 => {
         'data' => {
-            'id'        => 1,
-            'surname'     => 'surname2',
-            'name'      => 'name8',            
-            'status'    => 0
+            'id'        => 3,
+            'name'      => $t->app->_random_string( 24 ),
+            'surname'     => $t->app->_random_string( 24 ),
+            'status'    => 1,
+            'login'      => $t->app->_random_string( 16 ),
+            'email'     => $t->app->_random_string( 24 ),
+            'phone'    => '7(921)1111111',
+            'newpassword'    => 'admin',
+            'description' => $t->app->_random_string( 256 ),
+            'patronymic' => $t->app->_random_string( 24 ),
+            upload => { file => $picture_path . 'all_right.svg' }
         },
         'result' => {
-            'message'   => "User with surname 'surname2' already exists",
+            'message'   => "Empty password",
             'status'    => 'fail'
         },
-        'comment' => 'surname already used:' 
+        'comment' => 'No password:' 
     },
     9 => {
         'data' => {
-            'id'        => 1,
-            'surname'     => 'surname9',
-            'name'      => 'name2',            
-            'status'    => 0
+            'id'        => 3,
+            'name'      => $t->app->_random_string( 24 ),
+            'surname'     => $t->app->_random_string( 24 ),
+            'status'    => 1,
+            'login'      => $t->app->_random_string( 16 ),
+            'email'     => $t->app->_random_string( 24 ),
+            'phone'    => '7(921)1111111',
+            'password'    => 'admin',
+            'newpassword'    => 'newadmin',
+            'description' => $t->app->_random_string( 256 ),
+            'patronymic' => $t->app->_random_string( 24 ),
+            upload => { file => $picture_path . 'all_right_save1.svg' }
         },
         'result' => {
-            'message'   => "User with name 'name2' already exists",
+            'message'   => "file with this name already used",
             'status'    => 'fail'
         },
-        'comment' => 'Name already used:' 
+        'comment' => 'Same filename:' 
     }
 };
 
@@ -209,15 +266,75 @@ foreach my $test (sort {$a <=> $b} keys %{$test_data}) {
     diag "";
 };
 
+$test_data = {
+    # положительные тесты
+    1 => {
+        'data' => {
+            'id'        => 2
+        },
+        'result' => {
+            'id'        => 2,
+            'status'    => 'ok'
+        },
+        'comment' => 'All right:' 
+    },
+    2 => {
+        'data' => {
+            'id'        => 3
+        },
+        'result' => {
+            'id'        => 3,
+            'status'    => 'ok'
+        },
+        'comment' => 'All right:' 
+    }
+};
+
+foreach my $test (sort {$a <=> $b} keys %{$test_data}) {
+    diag ( $$test_data{$test}{'comment'} );
+    my $data = $$test_data{$test}{'data'};
+    my $result = $$test_data{$test}{'result'};
+    $t->get_ok($host.'/user/delete' => {token => $token} => form => $data )
+        ->status_is(200)
+        ->content_type_is('application/json;charset=UTF-8')
+        ->json_is( $result );
+    diag "";
+};
+
+clear_db();
+
 done_testing();
 
 # очистка тестовой таблицы
 sub clear_db {
-    if ($t->app->config->{test}) {
-        $t->app->pg_dbh->do('ALTER SEQUENCE "public".users_id_seq RESTART');
-        $t->app->pg_dbh->do('TRUNCATE TABLE "public".users RESTART IDENTITY CASCADE');
-    }
-    else {
-        warn("Turn on 'test' option in config")
-    }
+    # получение соли из конфига
+    my $salt = $t->app->config->{'secrets'}->[0];
+
+    # преобразование пароля
+    my $password = sha256_hex( 'admin', $salt );
+
+    $t->app->pg_dbh->do('ALTER SEQUENCE "public".users_id_seq RESTART');
+    $t->app->pg_dbh->do('TRUNCATE TABLE "public".users RESTART IDENTITY CASCADE');
+
+    $t->app->pg_dbh->do('ALTER SEQUENCE "public".data_id_seq RESTART');
+    $t->app->pg_dbh->do('TRUNCATE TABLE "public".user_data RESTART IDENTITY CASCADE');
+
+    $t->app->pg_dbh->do('ALTER SEQUENCE "public".doc_id_seq RESTART');
+    $t->app->pg_dbh->do('TRUNCATE TABLE "public".user_doc RESTART IDENTITY CASCADE');
+
+    $t->app->pg_dbh->do('TRUNCATE TABLE "public".user_links RESTART IDENTITY CASCADE');
+
+    $t->app->pg_dbh->do('INSERT INTO "public"."users" ( "login", "email", "status", "password" ) VALUES ( \'admin\', \'admin@admin\', \'1\', \''. $password .' \')');
+}
+
+# получение id последнего пользователя
+# my $answer = get_last_id_user( $connect );
+sub get_last_id_user {
+    my $connect = shift;
+
+    my $sth = $connect->prepare( 'SELECT max("id") AS "id" FROM "public"."users"' );
+    $sth->execute();
+    my $answer = $sth->fetchrow_hashref();
+
+    return $$answer{'id'};
 }

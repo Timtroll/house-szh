@@ -71,15 +71,17 @@ sub _get_data {
 
     return unless $id;
 
-    my ( $result, $row, $sql, $sth );
+    my ( $result, $row, $sql, $sth, $data_id );
 
-    $sql = 'SELECT * FROM "public"."user_data" WHERE "id" = :id';
-    $sth = $self->{app}->pg_dbh->prepare( $sql );
-    $sth->bind_param( ':id', $id );
-    $sth->execute();
-    $row = $sth->fetchrow_hashref();
-    $sth->finish();
-    
+    unless( @! ) {
+        $sql = 'SELECT * FROM "public"."user_data" WHERE "id" = :id';
+        $sth = $self->{app}->pg_dbh->prepare( $sql );
+        $sth->bind_param( ':id', $id );
+        $sth->execute();
+        $row = $sth->fetchrow_hashref();
+        $sth->finish();
+    }
+
     return $row;
 }
 
@@ -94,8 +96,13 @@ sub _update_data {
     }
 
     unless ( @! ) {
-        $sql = 'UPDATE "public"."user_data" SET '.join( ', ', map { "\"$_\"=".$self->{'app'}->pg_dbh->quote( $$data{$_} ) } keys %$data ) . " WHERE \"id\"=" . $$data{'id'} . "returning id";
+        $sql = 'UPDATE "public"."user_data" SET "name" = :name, "surname" = :surname, "patronymic" = :patronymic, "phone" = :phone WHERE "id" = :id returning id';
         $sth = $self->{'app'}->pg_dbh->prepare( $sql );
+        $sth->bind_param( ':name', $$data{'name'} );
+        $sth->bind_param( ':surname', $$data{'surname'} );
+        $sth->bind_param( ':patronymic', $$data{'patronymic'} );
+        $sth->bind_param( ':phone', $$data{'phone'} );
+        $sth->bind_param( ':id', $$data{'id'} );
         $sth->execute();
         $result = $sth->fetchrow_array();
         $sth->finish();
@@ -107,25 +114,61 @@ sub _update_data {
 }
 
 sub _delete {
-    my ( $self, $data ) = @_;
+    my ( $self, $id ) = @_;
 
-    my ( $sql, $sth, $result );
+    my ( $sql, $sth, $result, $data_id );
 
-    push @!, 'no id' unless $$data{'id'};
+    push @!, 'no id' unless $id;
+
 
     unless( @! ) {
-        # удаление записи из таблицы groups
+        # удаление записи из таблицы user_data
         $sql = 'DELETE FROM "public"."user_data" WHERE "id" = :id';
 
         $sth = $self->{app}->pg_dbh->prepare( $sql );
-        $sth->bind_param( ':id', $$data{'id'} );
+        $sth->bind_param( ':id', $id );
         $result = $sth->execute();
         $sth->finish();
 
-        push @!, "Could not delete user_data '$$data{'id'}'" if $result eq '0E0';
+        push @!, "Could not delete user_data '$id'" if $result eq '0E0';
+    }
+
+    unless( @! ) {
+        # удаление записи из таблицы user_links
+        $sql = 'DELETE FROM "public"."user_links" WHERE "second_id" = :id and "second_type" = :data';
+
+        $sth = $self->{app}->pg_dbh->prepare( $sql );
+        $sth->bind_param( ':id', $id );
+        $sth->bind_param( ':data', 'user_data' );
+        $result = $sth->execute();
+        $sth->finish();
+
+        push @!, "Could not delete user_links '$id'" if $result eq '0E0';
     }
 
     return $result;
+}
+
+sub _get_id {
+    my ( $self, $id ) = @_;
+
+    my ( $sql, $sth, $result, $data_id );
+
+    push @!, 'no id' unless $id;
+
+    unless( @! ) {
+        # получение id из таблицы user_links
+        $sql = 'SELECT second_id FROM "public"."user_links" WHERE "first_id" = :id and "second_type" = :data';
+
+        $sth = $self->{app}->pg_dbh->prepare( $sql );
+        $sth->bind_param( ':id', $id );
+        $sth->bind_param( ':data', 'user_data' );
+        $sth->execute();
+        $result = $sth->fetchrow_hashref();
+        $sth->finish();
+        $data_id = $$result{'second_id'};
+    }
+    return $data_id;
 }
 
 1;
