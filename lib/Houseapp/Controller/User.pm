@@ -7,11 +7,12 @@ use common;
 use Data::Dumper;
 use Digest::SHA qw( sha256_hex );
 use Mojo::JSON qw( encode_json );
+use Houseapp::Mock::Extensions;
 
 sub add {
     my $self = shift;
 
-    my ( $id, $data, $result, $filename, $resp, $url, $json, $local_path, $extension, $write_result, $name_length, $salt );
+    my ( $id, $data, $result, $filename, $resp, $url, $json, $local_path, $extension, $write_result, $name_length, $salt, $full_path );
 
     # проверка данных
     $data = $self->_check_fields();
@@ -23,6 +24,26 @@ sub add {
     # проверяем, занят ли емэйл
     if ( $self->model('Utils')->_exists_in_table('users', 'email', $$data{'email'} ) ) {
         push @!, "email $$data{'email'} already used"; 
+    }
+
+    unless ( @! ) {
+        if ( $$data{'content'} ) {
+            # получение соли из конфига
+            $salt = $self->{'app'}->{'config'}->{'secrets'}->[0];
+
+            # store real file name
+            $$data{'title'} = $$data{'filename'};
+
+            # генерация имени файла
+            $$data{'filename'} = sha256_hex( $$data{'filename'}, $salt );
+
+            $filename = $$data{'filename'} . '.' . $$data{'extension'};
+            $local_path = $config->{'upload_local_path'} . '/';
+            $full_path = $local_path . $filename;
+            if ( $self->_exists_in_directory( $full_path ) ) {
+                push @!, "file with this name already used";
+            }
+        }
     }
 
     unless ( @! ) {
@@ -43,11 +64,7 @@ sub add {
 
     unless ( @! ) {
         if ( $$data{'content'} ) {
-            # store real file name
-            $$data{'title'} = $$data{'filename'};
 
-            # генерация имени файла
-            $$data{'filename'} = sha256_hex( $$data{'filename'}, $self->_random_string( 40 ) );
 
             # присвоение пустого значения вместо null
             $$data{'description'} = '' unless ( $$data{'description'} );
@@ -309,7 +326,13 @@ sub edit {
             $$result{'real_filename'} = $$result_doc{$doc_id}{'old_name'};
 
             $$result{'url'} = $config->{'url'} . $config->{'upload_local_path'} . '/' . $$result{'filename'} . '.' . $$result{'extension'};
-            $$result{'mime'} = $config->{'valid_extensions'}->{$$data{'extension'}};
+
+            my $i = 0;
+            while ( $mime->[$i]->[1] ne $$result{'extension'} ) {
+                $i++;
+            }
+            $$result{'mime'} = $mime->[$i]->[0];
+
         }
     }
 
@@ -362,6 +385,13 @@ sub save {
         }
     }
 
+    # unless ( @! ) {
+    #     # проверяем, используется ли имя файла другим пользователем
+    #     if ( $$data{'content'} && $self->model('Utils')->_exists_in_table('user_doc', 'old_name', $$data{'filename'}, $$data{'id'} ) ) {
+    #         push @!, "file with this name already used"; 
+    #     }
+    # }
+
     unless ( @! ) {
         if ( $$data{'password'} ) {
             # получение соли из конфига
@@ -374,7 +404,6 @@ sub save {
                 push @!, "wrong password";
             }
             $$data{'password'} = sha256_hex( $$data{'newpassword'}, $salt );
-
         } 
     }
     unless ( @! ) {
@@ -400,127 +429,141 @@ sub save {
         if ( $$data{'content'} ) {
             # получение id в таблице user_doc
             $$data{'id'} = $self->model('User_doc')->_get_id( $id );
-            # если id существует, обновление записи
-            if ( $$data{'id'} ) {
-                # генерация имени файла
-                $$data{'new_name'} = sha256_hex( $$data{'filename'}, $salt );
-                # обновление записи
-                $result = $self->model('User_doc')->_update_media( $data );
 
-                unless ( @! ) {
-                    $fileinfo = $self->model('User_doc')->_check_media( $doc_id );
-                }
-                # удаление файла
-                unless ( @! ) {
-                    $filename = $$fileinfo{'new_name'} . '.' . $$fileinfo{'extension'};
-                    $local_path = $config->{'upload_local_path'} . '/';
-                    $full_path = $local_path . $filename;
-                    if ( $self->_exists_in_directory( $full_path ) ) {
-                        my $cmd = `rm $full_path`;
-                        if ( $? ) {
-                            push @!, "Can not delete $full_path, $?";
-                        }
-                    }
-                }
-                # удаление описания файла
-                unless ( @! ) {
-                    $filename = $$fileinfo{'new_name'} . '.' . 'desc';
-                    $full_path = $local_path . $filename;
-                    if ( $self->_exists_in_directory( $full_path ) ) {
-                        my $cmd = `rm $full_path`;
-                        if ( $? ) {
-                            push @!, "Can not delete $full_path description, $?";
-                        }
-                    }
-                }
-                # store real file name 
-                $$data{'title'} = $$data{'filename'};
-
-                # генерация имени файла
-                $$data{'filename'} = sha256_hex( $$data{'filename'}, $salt );
-
-                # присвоение пустого значения вместо null
-                $$data{'description'} = '' unless ( $$data{'description'} );
-
-                # получение точного времени
-                $$data{'time_create'} = $self->model('Utils')->_sec2date( time() );
-
-                # запись файла
-                my $res = write_file(
-                    $config->{'upload_local_path'} . '/' . $$data{'filename'} . '.' . $$data{'extension'},
-                    { binmode => ':utf8' },
-                    $$data{'content'}
-                );
-                push @!, "Can not store '$$data{'filename'}' file" unless $res;
-
-                # ввод данных в таблицу
-                unless ( @! ) {
-                    $result = $self->model('User_doc')->_insert_media( $data );
-                }
-
-                # преобразование данных в json
-                unless ( @! ) {
-                    # delete $$data{'content'};
-                    $json = encode_json ( $data );
-                    push @!, "Can not convert into json $$data{'title'}" unless $json;
-                }
-
-                # создание файла с описанием
-                unless ( @! ) {
-                    my $local_path = $config->{'upload_local_path'} . '/';
-                    my $extension = $config->{'desc_extension'};
-                    my $write_result = write_file(
-                        $local_path . $$data{'filename'} . '.' . $extension,
-                        { binmode => ':utf8' },
-                        $json
-                    );
-                    push @!, "Can not write desc of $$data{'title'}" unless $write_result;
-                }
+            if ( $self->model('Utils')->_exists_in_table('user_doc', 'old_name', $$data{'filename'}, $$data{'id'} ) ) {
+                push @!, "file with this name already used"; 
             }
-            # если id нету, создание нового файла и ввод записи
-            else {
-                # store real file name 
-                $$data{'title'} = $$data{'filename'};
 
-                # генерация имени файла
-                $$data{'filename'} = sha256_hex( $$data{'filename'}, $salt );
+            unless ( @! ) {
+                # если id существует, обновление записи
+                if ( $$data{'id'} ) {
 
-                # присвоение пустого значения вместо null
-                $$data{'description'} = '' unless ( $$data{'description'} );
+                    # генерация имени файла
+                    $$data{'new_name'} = sha256_hex( $$data{'filename'}, $salt );
 
-                # получение точного времени
-                $$data{'time_create'} = $self->model('Utils')->_sec2date( time() );
+                    # # обновление записи
+                    # $result = $self->model('User_doc')->_update_media( $data );
 
-                # запись файла
-                my $res = write_file(
-                    $config->{'upload_local_path'} . '/' . $$data{'filename'} . '.' . $$data{'extension'},
-                    { binmode => ':utf8' },
-                    $$data{'content'}
-                );
-                push @!, "Can not store '$$data{'filename'}' file" unless $res;
+                    unless ( @! ) {
+                        $fileinfo = $self->model('User_doc')->_check_media( $$data{'id'} );
+                    }
+                    # удаление файла
+                    unless ( @! ) {
+                        $filename = $$fileinfo{'new_name'} . '.' . $$fileinfo{'extension'};
+                        $local_path = $config->{'upload_local_path'} . '/';
+                        $full_path = $local_path . $filename;
 
-                # ввод данных в таблицу
-                unless ( @! ) {
-                    $result = $self->model('User_doc')->_insert_media( $data );
-                }
+                        if ( $self->_exists_in_directory( $full_path ) ) {
+                            my $cmd = `rm $full_path`;
+                            if ( $? ) {
+                                push @!, "Can not delete $full_path, $?";
+                            }
+                        }
+                    }
+                    # удаление описания файла
+                    unless ( @! ) {
+                        $filename = $$fileinfo{'new_name'} . '.' . 'desc';
+                        $full_path = $local_path . $filename;
 
-                # преобразование данных в json
-                unless ( @! ) {
-                    # delete $$data{'content'};
-                    $json = encode_json ( $data );
-                    push @!, "Can not convert into json $$data{'title'}" unless $json;
-                }
+                        if ( $self->_exists_in_directory( $full_path ) ) {
+                            my $cmd = `rm $full_path`;
+                            if ( $? ) {
+                                push @!, "Can not delete $full_path description, $?";
+                            }
+                        }
+                    }
+                    # store real file name 
+                    $$data{'title'} = $$data{'filename'};
 
-                # создание файла с описанием
-                unless ( @! ) {
-                    my $local_path = $config->{'upload_local_path'} . '/';
-                    my $extension = $config->{'desc_extension'};
-                    my $write_result = write_file(
-                        $local_path . $$data{'filename'} . '.' . $extension,
+                    # генерация имени файла
+                    $$data{'new_filename'} = sha256_hex( $$data{'filename'}, $salt );
+
+                    # присвоение пустого значения вместо null
+                    $$data{'description'} = '' unless ( $$data{'description'} );
+
+                    # получение точного времени
+                    $$data{'time_create'} = $self->model('Utils')->_sec2date( time() );
+
+                    # запись файла
+                    my $res = write_file(
+                        $config->{'upload_local_path'} . '/' . $$data{'new_filename'} . '.' . $$data{'extension'},
                         { binmode => ':utf8' },
-                        $json
+                        $$data{'content'}
                     );
-                    push @!, "Can not write desc of $$data{'title'}" unless $write_result;
+                    push @!, "Can not store '$$data{'new_filename'}' file" unless $res;
+
+                    # ввод данных в таблицу
+                    unless ( @! ) {
+                        # обновление записи
+                        $result = $self->model('User_doc')->_update_media( $data );
+                    }
+
+                    # преобразование данных в json
+                    unless ( @! ) {
+                        # delete $$data{'content'};
+                        $json = encode_json ( $data );
+
+                        push @!, "Can not convert into json $$data{'title'}" unless $json;
+                    }
+
+                    # создание файла с описанием
+                    unless ( @! ) {
+                        my $local_path = $config->{'upload_local_path'} . '/';
+                        my $extension = $config->{'desc_extension'};
+                        my $write_result = write_file(
+                            $local_path . $$data{'new_filename'} . '.' . $extension,
+                            { binmode => ':utf8' },
+                            $json
+                        );
+                        push @!, "Can not write desc of $$data{'title'}" unless $write_result;
+                    }
+                }
+
+                # если id нету, создание нового файла и ввод записи
+                else {
+                    # store real file name 
+                    $$data{'title'} = $$data{'filename'};
+
+                    # генерация имени файла
+                    $$data{'new_filename'} = sha256_hex( $$data{'filename'}, $salt );
+
+                    # присвоение пустого значения вместо null
+                    $$data{'description'} = '' unless ( $$data{'description'} );
+
+                    # получение точного времени
+                    $$data{'time_create'} = $self->model('Utils')->_sec2date( time() );
+
+                    # запись файла
+                    my $res = write_file(
+                        $config->{'upload_local_path'} . '/' . $$data{'new_filename'} . '.' . $$data{'extension'},
+                        { binmode => ':utf8' },
+                        $$data{'content'}
+                    );
+                    push @!, "Can not store '$$data{'new_filename'}' file" unless $res;
+
+                    # ввод данных в таблицу
+                    unless ( @! ) {
+                        $result = $self->model('User_doc')->_insert_media( $data );
+                    }
+
+                    # преобразование данных в json
+                    unless ( @! ) {
+                        # delete $$data{'content'};
+                        $json = encode_json ( $data );
+                        push @!, "Can not convert into json $$data{'title'}" unless $json;
+                    }
+
+                    # создание файла с описанием
+                    unless ( @! ) {
+                        my $local_path = $config->{'upload_local_path'} . '/';
+                        my $extension = $config->{'desc_extension'};
+                        my $write_result = write_file(
+                            $local_path . $$data{'new_filename'} . '.' . $extension,
+                            { binmode => ':utf8' },
+                            $json
+                        );
+                        push @!, "Can not write desc of $$data{'title'}" unless $write_result;
+                    }
                 }
             }
         }

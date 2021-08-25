@@ -234,7 +234,8 @@
 ```
 {
   "data":
-  {
+  [
+   [
     "id":               1,
     "login":           "login",
     "email":           "email",
@@ -243,8 +244,8 @@
     "name":            "name",
     "patronymic":      "patronymic",
     "phone":           "+7(921)1111111",
-  },
-    {
+   ],
+   [
     "id":               2,
     "login":           "login",
     "email":           "email",
@@ -253,9 +254,9 @@
     "name":            "name",
     "patronymic":      "patronymic",
     "phone":           "+7(921)1111111",
-  },
-  "status":"ok",
-  "total":"2"
+   ]
+  ],
+  "status":"ok"
 }
 
 

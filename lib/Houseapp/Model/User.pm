@@ -92,13 +92,23 @@ sub _update_users {
     }
 
     unless ( @! ) {
-        $sql = 'UPDATE "public"."users" SET "login" = :login, "email" = :email, "status" = :status, "password" = :password WHERE "id" = :id returning id';
-        $sth = $self->{'app'}->pg_dbh->prepare( $sql );
-        $sth->bind_param( ':login', $$data{'login'} );
-        $sth->bind_param( ':email', $$data{'email'} );
-        $sth->bind_param( ':status', $$data{'status'} );
-        $sth->bind_param( ':password', $$data{'password'} );
-        $sth->bind_param( ':id', $$data{'id'} );
+        if ( $$data{'password'} ) {
+            $sql = 'UPDATE "public"."users" SET "login" = :login, "email" = :email, "status" = :status, "password" = :password WHERE "id" = :id returning id';
+            $sth = $self->{'app'}->pg_dbh->prepare( $sql );
+            $sth->bind_param( ':login', $$data{'login'} );
+            $sth->bind_param( ':email', $$data{'email'} );
+            $sth->bind_param( ':status', $$data{'status'} );
+            $sth->bind_param( ':password', $$data{'password'} );
+            $sth->bind_param( ':id', $$data{'id'} );
+        }
+        else {
+            $sql = 'UPDATE "public"."users" SET "login" = :login, "email" = :email, "status" = :status WHERE "id" = :id returning id';
+            $sth = $self->{'app'}->pg_dbh->prepare( $sql );
+            $sth->bind_param( ':login', $$data{'login'} );
+            $sth->bind_param( ':email', $$data{'email'} );
+            $sth->bind_param( ':status', $$data{'status'} );
+            $sth->bind_param( ':id', $$data{'id'} );
+        }
         $sth->execute();
         $result = $sth->fetchrow_array();
         $sth->finish();

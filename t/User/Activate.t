@@ -7,6 +7,7 @@ BEGIN {
 
 use Test::More;
 use Test::Mojo;
+use Mojo::JSON qw( decode_json );
 use Data::Dumper;
 
 my $t = Test::Mojo->new('Houseapp');
@@ -32,21 +33,20 @@ my $token = $response->{'data'}->{'token'};
 
 
 # Импорт доступных групп
-diag "Add group:";
+diag "Add user:";
 my $data = {
-            'name'      => $t->app->_random_string( 24 ),
-            'surname'     => $t->app->_random_string( 24 ),
+            'name'      => 'nameedit',
+            'surname'     => 'surnameedit',
+            "patronymic"=>      "patronymicedit",
             'status'    => 1,
-            'login'      => $t->app->_random_string( 16 ),
-            'email'     => $t->app->_random_string( 24 ),
+            'login'      => 'loginedit',
+            'email'     => 'emailedit',
             'phone'    => '7(921)1111111',
-            'password'    => $t->app->_random_string( 32 ),
-            'description' => $t->app->_random_string( 256 ),
-            'patronymic' => $t->app->_random_string( 24 ),
-            upload => { file => $picture_path . 'all_right.svg' }
+            'password'    => 'passwordedit',
+            'description' => 'descriptionedit',
+            upload => { file => $picture_path . 'all_right_edit.svg' }
 };
 $t->post_ok( $host.'/user/add' => {token => $token} => form => $data );
-# $t->post_ok( $host.'/user/add' => form => $data );
 unless ( $t->status_is(200)->{tx}->{res}->{code} == 200  ) {
     diag("Can't connect");
     last;
@@ -61,11 +61,11 @@ my $test_data = {
     # положительные тесты
     1 => {
         'data' => {
-            'id'        => 1
+            'id'        => $answer
         },
         'result' => {
             'status'    => 'ok',
-            'id'        => $answer + 1
+            'id'        => $answer
         },
         'comment' => 'All right:' 
     },
@@ -85,7 +85,7 @@ my $test_data = {
             'id'        => 404
         },
         'result' => {
-            'message'   => "Id '404' doesn't exist",
+            'message'   => "user with id '404' doesn't exist",
             'status'    => 'fail'
         },
         'comment' => 'Wrong id:' 
@@ -95,24 +95,36 @@ my $test_data = {
             'id'        => 0
         },
         'result' => {
-            'message'   => "Id '0' doesn't exist",
+            'message'   => "user with id '0' doesn't exist",
             'status'    => 'fail'
         },
         'comment' => '0 id:' 
-    },
+    }
 };
 
 foreach my $test (sort {$a <=> $b} keys %{$test_data}) {
     diag ( $$test_data{$test}{'comment'} );
     my $data = $$test_data{$test}{'data'};
     my $result = $$test_data{$test}{'result'};
-    $t->post_ok($host.'/user/activate' => {token => $token} => form => $data )
-    # $t->post_ok($host.'/user/activate' => form => $data )
+    $t->get_ok($host.'/user/activate' => {token => $token} => form => $data )
         ->status_is(200)
         ->content_type_is('application/json;charset=UTF-8')
         ->json_is( $result );
     diag "";
 };
+
+# Ввод данных для вывода
+diag "Delete user:";
+$data = {
+            'id'      => $answer,
+};
+$t->get_ok( $host.'/user/delete' => {token => $token} => form => $data );
+unless ( $t->status_is(200)->{tx}->{res}->{code} == 200  ) {
+    diag("Can't connect");
+    last;
+}
+$t->content_type_is('application/json;charset=UTF-8');
+diag "";
 
 done_testing();
 

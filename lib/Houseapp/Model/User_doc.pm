@@ -164,10 +164,14 @@ sub _update_media {
         $sth->bind_param( ':size', $$data{'size'} );
         $sth->bind_param( ':description', $$data{'description'} );
         $sth->bind_param( ':id', $$data{'id'} );
+        $sth->execute();
         $result = $sth->fetchrow_array();
         $sth->finish();
-        push @!, "Can not update media" unless $result;
+
+        push @!, "Can not update media" if ! defined $result;
     }
+
+    return $result;
 }
 
 sub _get_id {
