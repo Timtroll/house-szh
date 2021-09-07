@@ -1,0 +1,59 @@
+/*
+/ enable absolute positioning /
+.inner-addon {
+  position: relative;
+}
+
+/ style glyph /
+.inner-addon .glyphicon {
+  position: absolute;
+  padding: 10px;
+  pointer-events: none;
+}
+
+/ align glyph /
+.left-addon .glyphicon  { left:  0px;}
+.right-addon .glyphicon { right: 0px;}
+
+/ add padding  /
+.left-addon input  { padding-left:  30px; }
+.right-addon input { padding-right: 30px; }
+
+*/
+
+
+.wrapper {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+}
+
+.content {
+  flex: 1 0 auto;
+  display: flex;
+}
+
+
+
+
+
+
+.glyphicon {
+  border: 1px solid #ccc;
+  /*margin: 8px;*/
+  /*width: 10%;*/
+  /*padding: 3px;*/
+  height: 34px;
+  text-align: center;
+  line-height: 13px;
+  /*transform: rotate(45deg);*/
+  color: #ccc;
+  /*transition: all .3s linear;*/
+}
+
+.glyphicon:hover {
+  border-color: #222;
+  color: #222;
+}

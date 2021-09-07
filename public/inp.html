@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+  <!--link href="//netdna.bootstrapcdn.com/twitter-bootstrap/3.2.0/css/bootstrap-combined.no-icons.min.css" rel="stylesheet"-->
+  <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+</head>
+<script src="js/common.js"></script>
+<body>
+
+  <div class="container">
+
+    <div class="inner-addon left-addon">
+      <i class="glyphicon glyphicon-user"></i>
+      <input type="text" class="form-control" placeholder="Username" />
+    </div>
+
+<div class="input-group col-xs-6">
+      <input type="text" class="form-control" placeholder="Search">
+<span class="input-group-addon"><i class="icon-large has-tooltip icon-edit text-blue"></i></span>
+<span class="input-group-addon"><i class="icon-large has-tooltip icon-remove-sign text-red"></i></span>
+
+</div>
+
+    <br>
+    <br>
+
+    <div class="row">
+
+      <div class="form-group col-xs-6">
+        <label class="control-label">
+          <code>.inner-addon.<i>left</i>-addon</code>
+        </label>
+        <div class="inner-addon left-addon">
+          <i class="glyphicon glyphicon-user"></i>
+          <input type="text" class="form-control" placeholder="Username" />
+        </div>
+      </div>
+
+      <div class="form-group col-xs-6">
+        <label class="control-label">
+          <code>.inner-addon.<i>right</i>-addon</code>
+        </label>
+        <div class="inner-addon right-addon">
+          <i class="glyphicon glyphicon-remove-circle"></i>
+          <input type="text" class="form-control" placeholder="Search"/>
+          <i class="icon-large has-tooltip icon-edit text-blue pull-right" title="" data-original-title="Edit"></i>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="row">
+      <label class="control-label">
+        <code>without class</code>
+      </label>
+      <div class="input-group col-xs-6">
+            <input type="text" class="form-control" style="border-right: 0;" id="id" placeholder="Search">
+            <span class="clear-text input-group-addon clear-Func" style="border-left: 0; background-color: #fff;cursor: pointer;" onclick="javascript: document.getElementById('id') = '';"><i class="icon-large has-tooltip icon-remove-sign text-red"></i></span>
+            <span class="input-group-addon" style="border: 0; background-color: #fff; cursor: pointer;"><i class="icon-large has-tooltip icon-edit text-blue"></i></span>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+
+</html>

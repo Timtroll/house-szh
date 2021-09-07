@@ -15,6 +15,7 @@ window.onload = () => {
         _showCommands_  = true,  // колонка с command ( командами )
         _showSort_      = true,  // сортировка при клике по названию колонки
         _separator_     = ' ';   // сепаратор для списка команд
+/* --------------------- */
 
 /*
     формирование команды
@@ -103,6 +104,7 @@ window.onload = () => {
             errorMessage.innerHTML = '';
         }, 2000);
     }
+/* --------------------- */
 
 /*
     Функции для работы с данными таблицы
@@ -139,7 +141,7 @@ console.log('response data?', data)
     };
 
     const Add = ({ target }) => {
-        ReadFile('http://house/tmpl/user.html', 'name');
+        ReadFile( 'http://house/tmpl/user.html', 'Modal', drawModal );
         toggleModal();
     };
 
@@ -268,19 +270,22 @@ console.log(target.id);
     };
 
 
-    async function ReadFile(url, targetName) {
-      try {
-        const response = await fetch(url);
-        const data = await response.text();
-        document.getElementById('Modal').innerHTML = data;
-console.log(data);
-console.log(
-    document.getElementsByName(targetName)[0].value
-);
-      } catch (err) {
-        console.error(err);
-      }
+    function drawModal( targetName, Data ) {
+        document.getElementById(targetName).innerHTML = Data;
     }
+//     async function ReadFile(url, targetName) {
+//       try {
+//         const response = await fetch(url);
+//         const data = await response.text();
+//         document.getElementById('Modal').innerHTML = data;
+// console.log(data);
+// console.log(
+//     document.getElementsByName(targetName)[0].value
+// );
+//       } catch (err) {
+//         console.error(err);
+//       }
+//     }
 /* --------------------- */
 
 /*

@@ -1,0 +1,56 @@
+.Select {
+  box-sizing: border-box;
+  font-size: 16px;
+  padding: 4px 20px 4px 20px;
+  border: none;
+  border-bottom: 1px solid #ddd;
+  border-top: 1px solid #ddd;
+  min-width: 250px;
+  display: inline-block;
+  width: auto;
+  height: 50px;
+}
+
+.Select:focus {outline: 3px solid #ddd;}
+
+.dropdown {
+  position: relative;
+  /*display: inline-block;*/
+}
+.dropdown span:hover {
+  background-color: #ddd;
+}
+.dropdown-selected {
+  background-color: #ddd;
+}
+
+
+.dropdown-content {
+  position: absolute;
+  background-color: #f6f6f6;
+  min-width: 250px;
+  overflow: auto;
+  border: 1px solid #ddd;
+  z-index: 1;
+  height: 340px;
+  min-height: 34px;
+}
+
+.dropdown-content span {
+  color: black;
+  padding: 8px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.Select-choice {
+  color: black;
+  padding: 8px;
+  text-decoration: none;
+  width: auto;
+  display: inline-block;
+  border: 1px solid #ccc;
+  /*float: left;*/
+  margin: 2px;
+}
+
